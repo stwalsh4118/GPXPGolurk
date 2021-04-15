@@ -16,7 +16,7 @@ import random as rand
 import json
 
 
-
+#@ load accounts from accounts.json file
 def loadAccounts(fileName):
     file = open(fileName)
     accounts = json.load(file)
@@ -27,11 +27,80 @@ def loadAccounts(fileName):
     accounts = accountFix
     return accounts
 
+#@ end chromedriver
 def endBot(driver):
     driver.quit()
     return
 
+
+def parseEvent(events, accounts):
+    
+    #@ reads and interprets events from pysimplegui elements
+    #@ events from elements are in the form: "user (space) event"
+    #@ other events triggered are keyboard events in the form: keycode (like Alt_L:18 for example)
+    
+    event = {}
+    for acc in accounts:
+        if(acc["user"] in events):
+            event["user"] = acc["user"]
+            event["event"] = events.split(" ")[1]
+    if(not(event)):
+        event = events
+    return event
+
+def parseValues(values, accounts):
+    
+    #@ reads and interprets values from pysimplegui elements
+    #@ values from elements are in the form: "username elementType : value"
+    #@ returns the parsed values in the form :
+    #@
+    #* username: {
+    #*    elements: {
+    #*        elementType : value
+    #*    }
+    #* }
+    #@ 
+    #@ with an additional entry that gives the currently focused tab in the form of:
+    #* tab : username
+
+    
+    
+    parsed_values = {}
+    
+    #@ loop through all accounts
+    for acc in accounts:
+        parsed_values[acc["user"]] = {
+            "elements" : {}
+        }
+        #@ loop through every value output
+        for key in values:
+            
+            #@ check if value is of the form "username elementType : value"
+            if(not(isinstance(key, int))):
+                if(acc["user"] in key):
+                    parsed_values[acc["user"]]["elements"][key.split(" ")[1]] = values[key]
+                    
+            #@ assign which tab is currently focused
+            elif(acc["user"] in values[key]):
+                parsed_values["tab"] = acc["user"]
+    
+    return parsed_values
+
 def createWindow(accounts):
+    
+    # [summary]
+    #     #@ create window tab for each account 
+    # Args:
+    #    #@ accounts (list of accounts): accounts in form of:
+    #    #*  {
+    #    #*   "user": username,
+    #    #*   "pw": password
+    #    #*  }
+    #    #*
+
+    # Returns:
+    #     #@ list (pysimplegui layout): returns tabs for each account
+    
     tabs = []
     for account in accounts:
        tab_building = []
@@ -47,7 +116,7 @@ def createWindow(accounts):
                )
        ],
        tab_building += [
-            sg.Button(button_text="End Program", key=account["user"] + " endbutton"),
+            sg.Button(button_text="End Program"),
             sg.Text("Number of Runs"),
             sg.Spin(values=list(range(1, 100000)), initial_value=1, size=(5, 1), key=account["user"] + " spin"),
             sg.Checkbox(text="Pass Orb?", key=account["user"] + " passorb"),
@@ -67,6 +136,10 @@ class RunMaster:
     def terminate(self):
         self._running = False
 
+    
+
+    def run(self, driver, number, storage , numruns, passorb):
+        
         #    [summary]
         #    Used as a target method for thread.
         #
@@ -81,8 +154,6 @@ class RunMaster:
         #@    storage (list): list object used to store data from click run
         #@    numruns (int x > 0): number of click runs to complete in a row
         #@    passorb (bool): if True selects "Iteract with players that have interacted with you that you haven't" to farm pass orbs
-
-    def run(self, driver, number, storage , numruns, passorb):
         
         for i in range(numruns):
             
@@ -247,12 +318,7 @@ for user in drivers:
 
 
 
-
-
-
-
-
-
+#@ initialize gui window
 
 layout = [
     [
@@ -260,8 +326,13 @@ layout = [
     ]
 ]
 
+#@ initialize data storage
+run_data_storages = []
+for acc in accounts:
+    run_data_storages.append({
+        acc["user"] : []
+    })
 
-run_stat_storage = []
 window = sg.Window("Demo", layout, return_keyboard_events=True, use_default_focus=False)
 
 previous_run_storage_state = []
@@ -284,30 +355,37 @@ is_clicking = []
 while True:
     event, values = window.read(timeout=1000, close=False)
     passorb = False
+    print("event ", event, " values ", values ) 
+    
+    parsed_event = parseEvent(event, accounts)
+    parsed_values = parseValues(values, accounts)
+    print(parsed_values)
+    
     
     ##@ End program if user closes window or presses the OK button
-    if (event == "End Program" or event == sg.WIN_CLOSED):
-        endBot(drivers["seanwalsh4118@gmail.com"])
+    if ("End Program" in parsed_event or parsed_event == sg.WIN_CLOSED):
+        for user in drivers:
+            endBot(drivers[user])
         break
-    print("event ", event, " values ", values ) 
-    # 
-    ##@ on clicking "Click" button do run
-    #elif event == "Click":
+    
+
+    # #@ on clicking "Click" button do run
+    # elif event == "Click":
     #    if(not(clicking)):
     #        if(values[1]):
     #            passorb = True
     #        RunMasters.append(RunMaster())
-    #        threads.append(Thread(target = RunMasters[len(RunMasters) - 1].run, args =(driver, 300, run_stat_storage, numRuns, passorb, )))
+    #        threads.append(Thread(target = RunMasters[len(RunMasters) - 1].run, args =(driver, 300, run_data_storages, numRuns, passorb, )))
     #        threads[len(threads) - 1].start()
     #        is_clicking.append(True)
-    #
+    
     ##@ on "ENTER" key input do run
     #elif(event in ('\r', QT_ENTER_KEY1, QT_ENTER_KEY2)):
     #    if(not(clicking)):
     #        if(values[1]):
     #            passorb = True
     #        RunMasters.append(RunMaster())
-    #        threads.append(Thread(target=RunMasters[len(RunMasters) - 1].run, args=(driver, 300, run_stat_storage, numRuns, passorb, )))
+    #        threads.append(Thread(target=RunMasters[len(RunMasters) - 1].run, args=(driver, 300, run_data_storages, numRuns, passorb, )))
     #        threads[len(threads) - 1].start()
     #        is_clicking.append(True)
     #
@@ -336,20 +414,20 @@ while True:
     #    i += 1
     #    
     #    
-    #run_stat_storage = []
+    #run_data_storages = []
     #runNum = 1
     #
     ##@ form stats list in "storage" in string that can be used by multiline element
-    # for run in run_stat_storage:
-    #    run_stat_storage.insert(0,"Num Run: " + str(runNum))
+    # for run in run_data_storages:
+    #    run_data_storages.insert(0,"Num Run: " + str(runNum))
     #    runNum += 1
     #    index = 1
     #    for stat in run:
-    #        run_stat_storage.insert(index,stat)
+    #        run_data_storages.insert(index,stat)
     #        index += 1
     
-    # if(previous_run_storage_state != run_stat_storage):
-    #    window["-RUN LIST-"].update(value = '\n'.join(run_stat_storage))
-    # previous_run_storage_state = run_stat_storage
+    # if(previous_run_storage_state != run_data_storages):
+    #    window["-RUN LIST-"].update(value = '\n'.join(run_data_storages))
+    # previous_run_storage_state = run_data_storages
 
 window.close()
