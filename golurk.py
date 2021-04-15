@@ -72,7 +72,7 @@ class RunMaster:
         #
         #    To be used in conjunction with threads in this manner:
         #
-        #*    t = Thread(target = c.run, args =(driver, number, storage, numruns, passOrb, ))
+        #*    t = Thread(target = c.run, args =(driver, number, storage, numruns, passorb, ))
         #*    t.start()
         #    
         #    Args:
@@ -80,16 +80,16 @@ class RunMaster:
         #@    number (int: x < 300): number of pokemon to open in the berry feeder
         #@    storage (list): list object used to store data from click run
         #@    numruns (int x > 0): number of click runs to complete in a row
-        #@    passOrb (bool): if True selects "Iteract with players that have interacted with you that you haven't" to farm pass orbs
+        #@    passorb (bool): if True selects "Iteract with players that have interacted with you that you haven't" to farm pass orbs
 
-    def run(self, driver, number, storage , numruns, passOrb):
+    def run(self, driver, number, storage , numruns, passorb):
         
         for i in range(numruns):
             
             if(self._running):
                 
                 #@ selects from range percent of berries that *should* be correct
-                percentCorrectBerries = rand.randint(10,20)
+                percent_correct_berries = rand.randint(10,20)
 
                 #@ navigates to users screen
                 driver.find_element(By.LINK_TEXT, "Users").click()
@@ -112,7 +112,7 @@ class RunMaster:
                     actions.perform()
 
                 #@ set users to pick from to *random(because all is being a bitch)*
-                if(driver.find_element(By.XPATH, "//*[@id='usersList']/span") != "ordered randomly" and not(passOrb)):
+                if(driver.find_element(By.XPATH, "//*[@id='usersList']/span") != "ordered randomly" and not(passorb)):
                     driver.find_element(By.XPATH, "//*[@id='usersList']").click()
                     time.sleep(.5)
                     ActionChains(driver).send_keys(Keys.DOWN + Keys.DOWN + Keys.DOWN + Keys.DOWN + Keys.DOWN + Keys.DOWN + Keys.DOWN + Keys.DOWN + Keys.DOWN + Keys.DOWN + Keys.DOWN + Keys.DOWN).perform()
@@ -121,7 +121,7 @@ class RunMaster:
                     time.sleep(2)
                     
                 #@ set users to pick from to *users that have interacted with me*
-                elif(passOrb):
+                elif(passorb):
                     driver.find_element(By.XPATH, "//*[@id='usersList']").click()
                     time.sleep(.5)
                     ActionChains(driver).send_keys(Keys.DOWN + Keys.DOWN + Keys.DOWN + Keys.DOWN + Keys.DOWN + Keys.DOWN + Keys.DOWN + Keys.DOWN + Keys.DOWN + Keys.DOWN + Keys.DOWN + Keys.DOWN + Keys.UP + Keys.UP + Keys.UP + Keys.UP + Keys.UP + Keys.UP + Keys.UP + Keys.UP).perform()
@@ -135,18 +135,18 @@ class RunMaster:
 
 
             i = 300
-            properBerry = 0
-            numBerries = 0
+            proper_berry_amount = 0
+            total_berry_amount = 0
             click = False
             
             #@ while loop that runs the clicking process
             while(i >= 0 and self._running):
                 #@ get text to know what berry to click
                 try:
-                    #@ if feederUI is stale, skip this while step and try again until you can read the text
-                    feederUI = driver.find_element(By.ID, "infoInteract")
-                    feederInfo = feederUI.find_element(By.CSS_SELECTOR, "div")
-                    feederInfoText = feederInfo.text
+                    #@ if feeder_UI is stale, skip this while step and try again until you can read the text
+                    feeder_UI = driver.find_element(By.ID, "infoInteract")
+                    feeder_info = feeder_UI.find_element(By.CSS_SELECTOR, "div")
+                    feeder_info_text = feeder_info.text
                     click = True
                 except:
                     click = False
@@ -154,39 +154,39 @@ class RunMaster:
 
                 #@ click depending on which berry
                 if(click):
-                    berryCorrectness = rand.randint(0,100)
-                    if(berryCorrectness < percentCorrectBerries):
-                        if("sour" in feederInfoText):
+                    berry_correctness = rand.randint(0,100)
+                    if(berry_correctness < percent_correct_berries):
+                        if("sour" in feeder_info_text):
                             actions = ActionChains(driver)
                             actions.send_keys("1")
                             actions.perform()
-                            properBerry += 1
-                        elif("spicy" in feederInfoText):
+                            proper_berry_amount += 1
+                        elif("spicy" in feeder_info_text):
                             actions = ActionChains(driver)
                             actions.send_keys("2")
                             actions.perform()
-                            properBerry += 1
-                        elif("dry" in feederInfoText):
+                            proper_berry_amount += 1
+                        elif("dry" in feeder_info_text):
                             actions = ActionChains(driver)
                             actions.send_keys("3")
                             actions.perform()
-                            properBerry += 1
-                        elif("sweet" in feederInfoText):
+                            proper_berry_amount += 1
+                        elif("sweet" in feeder_info_text):
                             actions = ActionChains(driver)
                             actions.send_keys("4")
                             actions.perform()
-                            properBerry += 1
-                        elif("spicy" in feederInfoText):
+                            proper_berry_amount += 1
+                        elif("spicy" in feeder_info_text):
                             actions = ActionChains(driver)
                             actions.send_keys("5")
                             actions.perform()
-                            properBerry += 1 
+                            proper_berry_amount += 1 
                             
                     #@ if not designated to be "correct" select random berry or if clicking egg/no correct choice pokemon 
                     else:
-                        randomInput = rand.randint(1,5)
+                        random_input = rand.randint(1,5)
                         actions = ActionChains(driver)
-                        actions.send_keys(str(randomInput))
+                        actions.send_keys(str(random_input))
                         actions.perform()
                         
 
@@ -194,9 +194,9 @@ class RunMaster:
                 
                 #@ get number of pokemon left in the run
                 try:
-                    numLeft = int((WebDriverWait(driver, 3,ignored_exceptions=ignored_exceptions).until(EC.presence_of_element_located((By.XPATH, "//*[@id='infoFeederRemaining']/span"))).text.split())[0])
-                    i = numLeft
-                    numBerries = number - numLeft
+                    num_pokemon_left = int((WebDriverWait(driver, 3,ignored_exceptions=ignored_exceptions).until(EC.presence_of_element_located((By.XPATH, "//*[@id='infoFeederRemaining']/span"))).text.split())[0])
+                    i = num_pokemon_left
+                    total_berry_amount = number - num_pokemon_left
                 except:
                     pass
 
@@ -205,125 +205,80 @@ class RunMaster:
                 if("https://gpx.plus/users" in driver.current_url):
                     break
             
-            print("Proper Berry Percent: ", str((properBerry/300)*100), "%")
-            print("Proper Berries: ", str(properBerry))
+            print("Proper Berry Percent: ", str((proper_berry_amount/300)*100), "%")
+            print("Proper Berries: ", str(proper_berry_amount))
             
             #@ store stats in mutable object that thread can interact with in a global scale
             storage.append([
-                "    Total Berries: " + str(numBerries),
-                "    Theoretical Percent Correct Berries: " + str(percentCorrectBerries),
-                "    Num Proper Berries: " + str(properBerry),
-                "    Real Num Correct Berries: " + str((properBerry/numBerries)*100)
+                "    Total Berries: " + str(total_berry_amount),
+                "    Theoretical Percent Correct Berries: " + str(percent_correct_berries),
+                "    Num Proper Berries: " + str(proper_berry_amount),
+                "    Real Num Correct Berries: " + str((proper_berry_amount/total_berry_amount)*100)
             ])
 
 
 def createWindow(accounts):
     tabs = []
     for account in accounts:
-       tabBuilding = []
-       tabBuilding +=[
+       tab_building = []
+       tab_building +=[
            sg.Text("Tab for " + account["user"] + "'s account")
        ],
-       tabBuilding += [
+       tab_building += [
             sg.Text("Mass Click Runs")
        ],
-       tabBuilding += [
+       tab_building += [
             sg.Multiline(
                    autoscroll=False, disabled=True, size=(40, 30), key=(account["user"] + " multiline")
                )
        ],
-       tabBuilding += [
+       tab_building += [
             sg.Button(button_text="End Program", key=account["user"] + " endbutton"),
             sg.Text("Number of Runs"),
             sg.Spin(values=list(range(1, 100000)), initial_value=1, size=(5, 1), key=account["user"] + " spin"),
-            sg.Checkbox(text="Pass Orb?", key = account["user"] + " passorb"),
+            sg.Checkbox(text="Pass Orb?", key=account["user"] + " passorb"),
             sg.Button(button_text="Click", key=account["user"] + " click"),
             sg.Button(button_text="End Click", key=account["user"] + " endclick")
        ],
        tabs += [
-           sg.Tab(title = account["user"] + "'s tab", layout = tabBuilding)
+           sg.Tab(title = account["user"] + "'s tab", layout = tab_building)
        ],
     return tabs
 
 
-#app = [
-#
-#    [
-#       sg.Text("Mass Click Runs")
-#   ],
-#    [
-#       sg.Multiline(
-#            autoscroll=False, disabled=True, size=(40, 30), key="-RUN LIST-"
-#       )
-#    ],
-#    [
-#        sg.Button("End Program"),
-#        sg.Text("Number of Runs"),
-#        sg.Spin(values=list(range(1, 100000)), initial_value=1, size=(5, 1)),
-#       sg.Checkbox(text="Pass Orb?"),
-#        sg.Button("Click"),
-#        sg.Button("End Click")
-#    ]
-#
-#]
-
-#layout = [
-#    [sg.TabGroup(
-#        [
-#            [
-#                sg.Tab('Tab 1', tab1_layout),
-#                sg.Tab('Tab 2', tab2_layout)
-#            ]
-#       ], tooltip='TIP2')
-#     ],
-#    [
-#        sg.Button('Read')
-#    ]
-#]
-
-
 layout = [
-    [sg.TabGroup(createWindow(accounts))
-     ]
+    [
+        sg.TabGroup(createWindow(accounts))
+    ]
 ]
 
 
-clickRuns = []
+run_stat_storage = []
 window = sg.Window("Demo", layout, return_keyboard_events=True, use_default_focus=False)
-c = RunMaster()
-t = Thread(target = c.run, args =(driver, 300, clickRuns, 1,))
 
-clicking = False
-prevRunList = []
+previous_run_storage_state = []
 p = vlc.MediaPlayer("https://play.pokemonshowdown.com/audio/cries/wooloo.mp3")
 p.audio_set_volume(50)
 p.play()
 
 
-        
-
 
 QT_ENTER_KEY1 =  'special 16777220'
 QT_ENTER_KEY2 =  'special 16777221'
-passOrb = False
+passorb = False
 
 RunMasters = []
 threads = []
-isClicking = []
+is_clicking = []
 
 
 #@ Create an event loop
 while True:
     event, values = window.read(timeout=1000, close=False)
-    passOrb = False
-    numRuns = 0
-    #if(values[0] == ''):
-    #    numRuns = 1
-    #else:
-    #   numRuns = int(values[0])
-    #    
+    passorb = False
+    
     ##@ End program if user closes window or presses the OK button
-    if event == "End Program" or event == sg.WIN_CLOSED:
+    if (event == "End Program" or event == sg.WIN_CLOSED):
         endBot(driver)
         break
     print("event ", event, " values ", values ) 
@@ -332,21 +287,21 @@ while True:
     #elif event == "Click":
     #    if(not(clicking)):
     #        if(values[1]):
-    #            passOrb = True
+    #            passorb = True
     #        RunMasters.append(RunMaster())
-    #        threads.append(Thread(target = RunMasters[len(RunMasters) - 1].run, args =(driver, 300, clickRuns, numRuns, passOrb, )))
+    #        threads.append(Thread(target = RunMasters[len(RunMasters) - 1].run, args =(driver, 300, run_stat_storage, numRuns, passorb, )))
     #        threads[len(threads) - 1].start()
-    #        isClicking.append(True)
+    #        is_clicking.append(True)
     #
     ##@ on "ENTER" key input do run
     #elif(event in ('\r', QT_ENTER_KEY1, QT_ENTER_KEY2)):
     #    if(not(clicking)):
     #        if(values[1]):
-    #            passOrb = True
+    #            passorb = True
     #        RunMasters.append(RunMaster())
-    #        threads.append(Thread(target=RunMasters[len(RunMasters) - 1].run, args=(driver, 300, clickRuns, numRuns, passOrb, )))
+    #        threads.append(Thread(target=RunMasters[len(RunMasters) - 1].run, args=(driver, 300, run_stat_storage, numRuns, passorb, )))
     #        threads[len(threads) - 1].start()
-    #        isClicking.append(True)
+    #        is_clicking.append(True)
     #
     ##@ on clicking "End Click" button end run on thread        
     #elif event == "End Click":
@@ -354,7 +309,7 @@ while True:
     #        RunMasters[i].terminate()
     #    RunMasters.clear()
     #    threads.clear()
-    #    isClicking.clear()
+    #    is_clicking.clear()
     #   driver.get("https://gpx.plus/users/random/1")
     #   p = vlc.MediaPlayer("https://play.pokemonshowdown.com/audio/cries/wooloo.mp3")
     #    p.audio_set_volume(50)
@@ -363,12 +318,12 @@ while True:
     ##@ if a thread is not alive (which means it died for some reason without my intervention) play sound and reset
     #i = 0
     #for thread in threads:
-    #   if(not(thread.is_alive()) and isClicking[i]):
+    #   if(not(thread.is_alive()) and is_clicking[i]):
     #        p = vlc.MediaPlayer("https://play.pokemonshowdown.com/audio/cries/wooloo.mp3")
     #        p.audio_set_volume(50)
     #        p.play()
     #        threads.pop(i)
-    #        isClicking.pop(i)
+    #        is_clicking.pop(i)
     #        RunMasters.pop(i)
     #    i += 1
     #    
@@ -377,7 +332,7 @@ while True:
     #runNum = 1
     #
     ##@ form stats list in "storage" in string that can be used by multiline element
-    #for run in clickRuns:
+    #for run in run_stat_storage:
     #    runList.insert(0,"Num Run: " + str(runNum))
     #    runNum += 1
     #    index = 1
@@ -385,8 +340,8 @@ while True:
     #        runList.insert(index,stat)
     #        index += 1
     #
-    #if(prevRunList != runList):
+    #if(previous_run_storage_state != runList):
     #    window["-RUN LIST-"].update(value = '\n'.join(runList))
-    #prevRunList = runList
+    #previous_run_storage_state = runList
 
 window.close()
