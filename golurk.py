@@ -17,26 +17,6 @@ import json
 
 
 
-
-
-
-
-path_to_extension = r'C:\Users\Seanw\OneDrive\Documents\gpx\1.34.0_0'
-
-chrome_options = Options()
-chrome_options.add_argument('load-extension=' + path_to_extension)
-
-driver = Chrome(executable_path='./chromedriver', chrome_options=chrome_options)
-driver.implicitly_wait(3)
-
-driver.create_options()
-
-
-#go to website
-driver.get("https://gpx.plus/")
-
-
-
 def loadAccounts(fileName):
     file = open(fileName)
     accounts = json.load(file)
@@ -47,17 +27,37 @@ def loadAccounts(fileName):
     accounts = accountFix
     return accounts
 
-accounts = loadAccounts("accounts.json")
-
-#input username and password and login
-driver.find_element(By.NAME, "email").send_keys(accounts[0]["user"])
-driver.find_element(By.NAME, "password").send_keys(accounts[0]["pw"] + Keys.ENTER)
-
-
 def endBot(driver):
     driver.quit()
     return
 
+def createWindow(accounts):
+    tabs = []
+    for account in accounts:
+       tab_building = []
+       tab_building +=[
+           sg.Text("Tab for " + account["user"] + "'s account")
+       ],
+       tab_building += [
+            sg.Text("Mass Click Runs")
+       ],
+       tab_building += [
+            sg.Multiline(
+                   autoscroll=False, disabled=True, size=(40, 30), key=(account["user"] + " multiline")
+               )
+       ],
+       tab_building += [
+            sg.Button(button_text="End Program", key=account["user"] + " endbutton"),
+            sg.Text("Number of Runs"),
+            sg.Spin(values=list(range(1, 100000)), initial_value=1, size=(5, 1), key=account["user"] + " spin"),
+            sg.Checkbox(text="Pass Orb?", key=account["user"] + " passorb"),
+            sg.Button(button_text="Click", key=account["user"] + " click"),
+            sg.Button(button_text="End Click", key=account["user"] + " endclick")
+       ],
+       tabs += [
+           sg.Tab(title = account["user"] + "'s tab", layout = tab_building)
+       ],
+    return tabs
 
 class RunMaster:
       
@@ -217,33 +217,41 @@ class RunMaster:
             ])
 
 
-def createWindow(accounts):
-    tabs = []
-    for account in accounts:
-       tab_building = []
-       tab_building +=[
-           sg.Text("Tab for " + account["user"] + "'s account")
-       ],
-       tab_building += [
-            sg.Text("Mass Click Runs")
-       ],
-       tab_building += [
-            sg.Multiline(
-                   autoscroll=False, disabled=True, size=(40, 30), key=(account["user"] + " multiline")
-               )
-       ],
-       tab_building += [
-            sg.Button(button_text="End Program", key=account["user"] + " endbutton"),
-            sg.Text("Number of Runs"),
-            sg.Spin(values=list(range(1, 100000)), initial_value=1, size=(5, 1), key=account["user"] + " spin"),
-            sg.Checkbox(text="Pass Orb?", key=account["user"] + " passorb"),
-            sg.Button(button_text="Click", key=account["user"] + " click"),
-            sg.Button(button_text="End Click", key=account["user"] + " endclick")
-       ],
-       tabs += [
-           sg.Tab(title = account["user"] + "'s tab", layout = tab_building)
-       ],
-    return tabs
+#@ Initialize chromedrivers
+
+accounts = loadAccounts("accounts.json")
+
+path_to_extension = r'C:\Users\Seanw\OneDrive\Documents\gpx\1.34.0_0'
+
+chrome_options = Options()
+chrome_options.add_argument('load-extension=' + path_to_extension)
+
+drivers = {}
+for acc in accounts:
+    drivers[acc["user"]] = Chrome(executable_path='./chromedriver', chrome_options=chrome_options)
+
+for user in drivers:
+    drivers[user].create_options()
+
+
+account_index = 0
+for user in drivers:
+    #go to website
+    drivers[user].get("https://gpx.plus/")
+
+    #input username and password and login
+    drivers[user].find_element(By.NAME, "email").send_keys(accounts[account_index]["user"])
+    drivers[user].find_element(By.NAME, "password").send_keys(accounts[account_index]["pw"] + Keys.ENTER)
+    account_index += 1
+
+
+
+
+
+
+
+
+
 
 
 layout = [
@@ -279,7 +287,7 @@ while True:
     
     ##@ End program if user closes window or presses the OK button
     if (event == "End Program" or event == sg.WIN_CLOSED):
-        endBot(driver)
+        endBot(drivers["seanwalsh4118@gmail.com"])
         break
     print("event ", event, " values ", values ) 
     # 
@@ -328,20 +336,20 @@ while True:
     #    i += 1
     #    
     #    
-    #runList = []
+    #run_stat_storage = []
     #runNum = 1
     #
     ##@ form stats list in "storage" in string that can be used by multiline element
-    #for run in run_stat_storage:
-    #    runList.insert(0,"Num Run: " + str(runNum))
+    # for run in run_stat_storage:
+    #    run_stat_storage.insert(0,"Num Run: " + str(runNum))
     #    runNum += 1
     #    index = 1
     #    for stat in run:
-    #        runList.insert(index,stat)
+    #        run_stat_storage.insert(index,stat)
     #        index += 1
-    #
-    #if(previous_run_storage_state != runList):
-    #    window["-RUN LIST-"].update(value = '\n'.join(runList))
-    #previous_run_storage_state = runList
+    
+    # if(previous_run_storage_state != run_stat_storage):
+    #    window["-RUN LIST-"].update(value = '\n'.join(run_stat_storage))
+    # previous_run_storage_state = run_stat_storage
 
 window.close()
