@@ -36,7 +36,7 @@ def endBot(driver):
 def parseEvent(events, accounts):
     
     #@ reads and interprets events from pysimplegui elements
-    #@ events from elements are in the form: "user (space) event"
+    #@ events from elements are in the form:   "user (space) event"
     #@ other events triggered are keyboard events in the form: keycode (like Alt_L:18 for example)
     
     event = {}
@@ -138,7 +138,7 @@ class RunMaster:
 
     
 
-    def run(self, driver, number, storage , numruns, passorb):
+    def run(self, driver, username, number, storage , numruns, passorb):
         
         #    [summary]
         #    Used as a target method for thread.
@@ -280,7 +280,7 @@ class RunMaster:
             print("Proper Berries: ", str(proper_berry_amount))
             
             #@ store stats in mutable object that thread can interact with in a global scale
-            storage.append([
+            storage[username].append([
                 "    Total Berries: " + str(total_berry_amount),
                 "    Theoretical Percent Correct Berries: " + str(percent_correct_berries),
                 "    Num Proper Berries: " + str(proper_berry_amount),
@@ -327,11 +327,9 @@ layout = [
 ]
 
 #@ initialize data storage
-run_data_storages = []
+run_data_storages = {}
 for acc in accounts:
-    run_data_storages.append({
-        acc["user"] : []
-    })
+    run_data_storages[acc["user"]] = []
 
 window = sg.Window("Demo", layout, return_keyboard_events=True, use_default_focus=False)
 
@@ -346,38 +344,65 @@ QT_ENTER_KEY1 =  'special 16777220'
 QT_ENTER_KEY2 =  'special 16777221'
 passorb = False
 
-RunMasters = []
-threads = []
-is_clicking = []
+RunMasters = {}
+threads = {}
+is_clicking = {}
+runs_completed = {}
 
 
 #@ Create an event loop
 while True:
     event, values = window.read(timeout=1000, close=False)
     passorb = False
-    print("event ", event, " values ", values ) 
+    #print("event ", event, " values ", values ) 
     
     parsed_event = parseEvent(event, accounts)
+    #print(parsed_event)
     parsed_values = parseValues(values, accounts)
-    print(parsed_values)
+    #print(parsed_values)
     
     
-    ##@ End program if user closes window or presses the OK button
+    #@ End program if user closes window or presses the OK button
     if ("End Program" in parsed_event or parsed_event == sg.WIN_CLOSED):
         for user in drivers:
             endBot(drivers[user])
         break
     
-
-    # #@ on clicking "Click" button do run
-    # elif event == "Click":
-    #    if(not(clicking)):
-    #        if(values[1]):
-    #            passorb = True
-    #        RunMasters.append(RunMaster())
-    #        threads.append(Thread(target = RunMasters[len(RunMasters) - 1].run, args =(driver, 300, run_data_storages, numRuns, passorb, )))
-    #        threads[len(threads) - 1].start()
-    #        is_clicking.append(True)
+    if(isinstance(parsed_event, dict)):
+        
+    #@ on clicking "Click" button do run
+        if (parsed_event["event"] == "click"):
+            
+            username_to_run = parsed_event["user"]
+            if(not(username_to_run in is_clicking)):
+                is_clicking[username_to_run] = True
+                RunMasters[username_to_run] = RunMaster()
+                
+                threads[username_to_run] = Thread(
+                    target = RunMasters[username_to_run].run,
+                    args =(drivers[username_to_run],
+                           username_to_run,
+                           300,
+                           run_data_storages,
+                           parsed_values[username_to_run]["elements"]["spin"],
+                           parsed_values[username_to_run]["elements"]["passorb"],)
+                    )
+                
+                threads[username_to_run].start()
+                
+            elif(not(is_clicking[username_to_run])):
+                is_clicking[username_to_run] = True
+                RunMasters[username_to_run] = RunMaster()
+                
+                threads[username_to_run] = Thread(
+                    target = RunMasters[username_to_run].run,
+                    args =(drivers[username_to_run],
+                           username_to_run,
+                           300,
+                           run_data_storages,
+                           parsed_values[username_to_run]["elements"]["spin"],
+                           parsed_values[username_to_run]["elements"]["passorb"],)
+                    )
     
     ##@ on "ENTER" key input do run
     #elif(event in ('\r', QT_ENTER_KEY1, QT_ENTER_KEY2)):
