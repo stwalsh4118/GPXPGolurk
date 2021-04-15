@@ -32,6 +32,17 @@ def endBot(driver):
     driver.quit()
     return
 
+def getMouseCoordinates(event_string):
+    
+    if(event_string != "None"):
+        x = event_string.split(" ")[2].split("=")[1]
+        y = (event_string.split(" ")[3].split("=")[1])[:-1]
+        coordinate_pair = (int(x),int(y))
+    else:
+        return "No coordinates available."
+    
+    return coordinate_pair
+
 
 def parseEvent(events, accounts):
     
@@ -331,7 +342,7 @@ run_data_storages = {}
 for acc in accounts:
     run_data_storages[acc["user"]] = []
 
-window = sg.Window("Demo", layout, return_keyboard_events=True, use_default_focus=False)
+window = sg.Window("Golurk", layout, return_keyboard_events=True, use_default_focus=False, finalize=True)
 
 previous_run_storage_state = []
 p = vlc.MediaPlayer("https://play.pokemonshowdown.com/audio/cries/wooloo.mp3")
@@ -349,24 +360,61 @@ threads = {}
 is_clicking = {}
 runs_completed = {}
 
-
+window.bind('<Motion>', "???")
 #@ Create an event loop
 while True:
     event, values = window.read(timeout=1000, close=False)
     passorb = False
     #print("event ", event, " values ", values ) 
-    
+    #print(event)
     parsed_event = parseEvent(event, accounts)
     #print(parsed_event)
     parsed_values = parseValues(values, accounts)
     #print(parsed_values)
-    
+    #print(is_clicking)
+
+
     
     #@ End program if user closes window or presses the OK button
     if ("End Program" in parsed_event or parsed_event == sg.WIN_CLOSED):
         for user in drivers:
             endBot(drivers[user])
         break
+    
+    #@ on "ENTER" key input do run
+    elif(event in ('\r', QT_ENTER_KEY1, QT_ENTER_KEY2)):
+        username_to_run = parsed_values["tab"]
+        if(not(username_to_run in is_clicking)):
+            is_clicking[username_to_run] = True
+            RunMasters[username_to_run] = RunMaster()
+            
+            threads[username_to_run] = Thread(
+                target = RunMasters[username_to_run].run,
+                args =(drivers[username_to_run],
+                        username_to_run,
+                        300,
+                        run_data_storages,
+                        parsed_values[username_to_run]["elements"]["spin"],
+                        parsed_values[username_to_run]["elements"]["passorb"],)
+                )
+            
+            threads[username_to_run].start()
+                
+        elif(not(is_clicking[username_to_run])):
+            is_clicking[username_to_run] = True
+            RunMasters[username_to_run] = RunMaster()
+            
+            threads[username_to_run] = Thread(
+                target = RunMasters[username_to_run].run,
+                args =(drivers[username_to_run],
+                        username_to_run,
+                        300,
+                        run_data_storages,
+                        parsed_values[username_to_run]["elements"]["spin"],
+                        parsed_values[username_to_run]["elements"]["passorb"],)
+                )
+    
+    
     
     if(isinstance(parsed_event, dict)):
         
@@ -403,17 +451,18 @@ while True:
                            parsed_values[username_to_run]["elements"]["spin"],
                            parsed_values[username_to_run]["elements"]["passorb"],)
                     )
+                threads[username_to_run].start()
+                
+        elif(parsed_event["event"] == "endclick"):
+            
+            username_to_end = parsed_event["user"]
+            RunMasters[username_to_end].terminate()
+            is_clicking[username_to_end] = False
+            drivers[username_to_end].get("https://gpx.plus/users/random/1")
+            p = vlc.MediaPlayer("https://play.pokemonshowdown.com/audio/cries/wooloo.mp3")
+            p.audio_set_volume(50)
+            p.play()
     
-    ##@ on "ENTER" key input do run
-    #elif(event in ('\r', QT_ENTER_KEY1, QT_ENTER_KEY2)):
-    #    if(not(clicking)):
-    #        if(values[1]):
-    #            passorb = True
-    #        RunMasters.append(RunMaster())
-    #        threads.append(Thread(target=RunMasters[len(RunMasters) - 1].run, args=(driver, 300, run_data_storages, numRuns, passorb, )))
-    #        threads[len(threads) - 1].start()
-    #        is_clicking.append(True)
-    #
     ##@ on clicking "End Click" button end run on thread        
     #elif event == "End Click":
     #    for i in range(0, len(RunMasters)):
