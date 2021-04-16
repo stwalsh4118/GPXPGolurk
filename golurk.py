@@ -20,15 +20,6 @@ from helper import *
 
 
 
-    
-    
-
-
-
-
-
-
-
 #@ Initialize chromedrivers
 
 accounts = loadAccounts("accounts.json")
@@ -95,7 +86,9 @@ is_thread_active = {}
 
 
 window.bind('<Motion>', "???")
-#@ Create an event loop
+names = ['Roberta', 'Kylie', 'Jenny', 'Helen','Andrea', 'Meredith','Deborah','Pauline','Belinda', 'Wendy']
+
+#@ pysimplegui event loop
 while True:
     event, values = window.read(timeout=1000, close=False)
     passorb = False
@@ -104,12 +97,24 @@ while True:
     parsed_event = parseEvent(event, accounts)
     #print(parsed_event)
     parsed_values = parseValues(values, accounts)
+    focused_tab = parsed_values["tab"]
     #print(parsed_values)
     #print(is_thread_active)
 
 
     
-    #@ End program if user closes window or presses the OK button
+
+    #@ filter egg names
+    if(parsed_values[focused_tab]["elements"]["searchinput"] != ""):
+        search = parsed_values[focused_tab]["elements"]["searchinput"]
+        new_values = [x for x in loadEggs("eggs.json")[0] if search in x]
+        window.Element(focused_tab + " eggs").Update(new_values)
+    else:
+        window.Element(focused_tab + " eggs").Update([x for x in loadEggs("eggs.json")[0]])
+        
+    print(parsed_values)
+    
+        #@ End program if user closes window or presses the OK button
     if ("End Program" in parsed_event or parsed_event == sg.WIN_CLOSED):
         for user in drivers:
             endBot(drivers[user])

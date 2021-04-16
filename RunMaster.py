@@ -33,9 +33,16 @@ class RunMaster:
         #@ Get number of members in your party
         num_party_members = int(driver.find_element(By.CSS_SELECTOR, "div[data-notification='party']").text)
         print(num_party_members)
-        loadEggs("eggs.json")
-        #while(num_party_members < 6):
-        
+        egg_list = loadEggs("eggs.json")
+        search_param = ""
+        if(pokemon_name in egg_list):
+            search_param = egg_list[pokemon_name]["image"]
+        else:
+            return
+        while(num_party_members < 6):
+            print(search_param)
+            if(not(self._running)):
+                break
         return
 
     def clickRun(self, driver, username, number, storage, numrunstat, numruns, passorb):
