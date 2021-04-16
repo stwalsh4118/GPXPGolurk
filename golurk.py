@@ -14,291 +14,19 @@ from selenium.webdriver.chrome.options import Options
 import PySimpleGUI as sg
 import random as rand
 import json
+from RunMaster import RunMaster
+from helper import *
 
 
-#@ load accounts from accounts.json file
-def loadAccounts(fileName):
-    file = open(fileName)
-    accounts = json.load(file)
 
-    accountFix = []
-    for acc in accounts["accounts"]:
-        accountFix.append(acc)
-    accounts = accountFix
-    return accounts
-
-#@ end chromedriver
-def endBot(driver):
-    driver.quit()
-    return
-
-def getMouseCoordinates(event_string):
-    
-    if(event_string != "None"):
-        x = event_string.split(" ")[2].split("=")[1]
-        y = (event_string.split(" ")[3].split("=")[1])[:-1]
-        coordinate_pair = (int(x),int(y))
-    else:
-        return "No coordinates available."
-    
-    return coordinate_pair
-
-
-def parseEvent(events, accounts):
-    
-    #@ reads and interprets events from pysimplegui elements
-    #@ events from elements are in the form:   "user (space) event"
-    #@ other events triggered are keyboard events in the form: keycode (like Alt_L:18 for example)
-    
-    event = {}
-    for acc in accounts:
-        if(acc["user"] in events):
-            event["user"] = acc["user"]
-            event["event"] = events.split(" ")[1]
-    if(not(event)):
-        event = events
-    return event
-
-def parseValues(values, accounts):
-    
-    #@ reads and interprets values from pysimplegui elements
-    #@ values from elements are in the form: "username elementType : value"
-    #@ returns the parsed values in the form :
-    #@
-    #* username: {
-    #*    elements: {
-    #*        elementType : value
-    #*    }
-    #* }
-    #@ 
-    #@ with an additional entry that gives the currently focused tab in the form of:
-    #* tab : username
 
     
     
-    parsed_values = {}
-    
-    #@ loop through all accounts
-    for acc in accounts:
-        parsed_values[acc["user"]] = {
-            "elements" : {}
-        }
-        #@ loop through every value output
-        for key in values:
-            
-            #@ check if value is of the form "username elementType : value"
-            if(not(isinstance(key, int))):
-                if(acc["user"] in key):
-                    parsed_values[acc["user"]]["elements"][key.split(" ")[1]] = values[key]
-                    
-            #@ assign which tab is currently focused
-            elif(acc["user"] in values[key]):
-                parsed_values["tab"] = acc["user"]
-    
-    return parsed_values
-
-def createWindow(accounts):
-    
-    # [summary]
-    #     #@ create window tab for each account 
-    # Args:
-    #    #@ accounts (list of accounts): accounts in form of:
-    #    #*  {
-    #    #*   "user": username,
-    #    #*   "pw": password
-    #    #*  }
-    #    #*
-
-    # Returns:
-    #     #@ list (pysimplegui layout): returns tabs for each account
-    
-    tabs = []
-    for account in accounts:
-       tab_building = []
-       tab_building +=[
-           sg.Text("Tab for " + account["user"] + "'s account")
-       ],
-       tab_building += [
-            sg.Text("Mass Click Runs")
-       ],
-       tab_building += [
-            sg.Multiline(
-                   autoscroll=False, disabled=True, size=(40, 30), key=(account["user"] + " multiline")
-               )
-       ],
-       tab_building += [
-            sg.Button(button_text="End Program"),
-            sg.Text("Number of Runs"),
-            sg.Spin(values=list(range(1, 100000)), initial_value=1, size=(5, 1), key=account["user"] + " spin"),
-            sg.Checkbox(text="Pass Orb?", key=account["user"] + " passorb"),
-            sg.Button(button_text="Click", key=account["user"] + " click"),
-            sg.Button(button_text="End Click", key=account["user"] + " endclick")
-       ],
-       tabs += [
-           sg.Tab(title = account["user"] + "'s tab", layout = tab_building)
-       ],
-    return tabs
-
-class RunMaster:
-      
-    def __init__(self):
-        self._running = True
-      
-    def terminate(self):
-        self._running = False
-
-    
-
-    def run(self, driver, username, number, storage, numrunstat, numruns, passorb):
-        
-        #    [summary]
-        #    Used as a target method for thread.
-        #
-        #    To be used in conjunction with threads in this manner:
-        #
-        #*    t = Thread(target = c.run, args =(driver, number, storage, numruns, passorb, ))
-        #*    t.start()
-        #    
-        #    Args:
-        #@    driver (Chrome webdriver): the driver of the Chrome application you are running
-        #@    number (int: x < 300): number of pokemon to open in the berry feeder
-        #@    storage (list): list object used to store data from click run
-        #@    numruns (int x > 0): number of click runs to complete in a row
-        #@    passorb (bool): if True selects "Iteract with players that have interacted with you that you haven't" to farm pass orbs
-        
-        for i in range(numruns):
-            
-            if(self._running):
-                
-                #@ selects from range percent of berries that *should* be correct
-                percent_correct_berries = rand.randint(10,20)
-
-                #@ navigates to users screen
-                driver.find_element(By.LINK_TEXT, "Users").click()
-                print(driver.current_url)
-                time.sleep(1)
-
-                #@ set number of pokemon/eggs to *300*
-                if(driver.find_element(By.NAME, "number").get_attribute("value") != 300):
-                    driver.find_element(By.NAME, "number").send_keys(Keys.DELETE + Keys.DELETE + Keys.DELETE + Keys.BACKSPACE + Keys.BACKSPACE + Keys.BACKSPACE + str(number))
-
-                #@ set number of users to *1000*
-                if(driver.find_element(By.XPATH,"//*[@id='usersCount']/span").text != "View 1000 users (who)"):
-                    driver.find_element(By.ID, "usersCount").click()
-                    time.sleep(.5)
-                    actions = ActionChains(driver)
-                    actions.send_keys(Keys.DOWN + Keys.DOWN + Keys.DOWN)
-                    actions.perform()
-                    time.sleep(.5)
-                    actions.send_keys(Keys.ENTER)
-                    actions.perform()
-
-                #@ set users to pick from to *random(because all is being a bitch)*
-                if(driver.find_element(By.XPATH, "//*[@id='usersList']/span") != "ordered randomly" and not(passorb)):
-                    driver.find_element(By.XPATH, "//*[@id='usersList']").click()
-                    time.sleep(.5)
-                    ActionChains(driver).send_keys(Keys.DOWN + Keys.DOWN + Keys.DOWN + Keys.DOWN + Keys.DOWN + Keys.DOWN + Keys.DOWN + Keys.DOWN + Keys.DOWN + Keys.DOWN + Keys.DOWN + Keys.DOWN).perform()
-                    time.sleep(.5)
-                    ActionChains(driver).send_keys(Keys.ENTER).perform()
-                    time.sleep(2)
-                    
-                #@ set users to pick from to *users that have interacted with me*
-                elif(passorb):
-                    driver.find_element(By.XPATH, "//*[@id='usersList']").click()
-                    time.sleep(.5)
-                    ActionChains(driver).send_keys(Keys.DOWN + Keys.DOWN + Keys.DOWN + Keys.DOWN + Keys.DOWN + Keys.DOWN + Keys.DOWN + Keys.DOWN + Keys.DOWN + Keys.DOWN + Keys.DOWN + Keys.DOWN + Keys.UP + Keys.UP + Keys.UP + Keys.UP + Keys.UP + Keys.UP + Keys.UP + Keys.UP).perform()
-                    time.sleep(.5)
-                    ActionChains(driver).send_keys(Keys.ENTER).perform()
-                    time.sleep(2)
-                    
-                #@ open berry feeder
-                driver.find_element(By.XPATH, "//*[@id='usersOpen']/input[1]").click()
 
 
 
-            i = 300
-            proper_berry_amount = 0
-            total_berry_amount = 0
-            click = False
-            
-            #@ while loop that runs the clicking process
-            while(i >= 0 and self._running):
-                #@ get text to know what berry to click
-                try:
-                    #@ if feeder_UI is stale, skip this while step and try again until you can read the text
-                    feeder_UI = driver.find_element(By.ID, "infoInteract")
-                    feeder_info = feeder_UI.find_element(By.CSS_SELECTOR, "div")
-                    feeder_info_text = feeder_info.text
-                    click = True
-                except:
-                    click = False
 
 
-                #@ click depending on which berry
-                if(click):
-                    berry_correctness = rand.randint(0,100)
-                    if(berry_correctness < percent_correct_berries):
-                        if("sour" in feeder_info_text):
-                            actions = ActionChains(driver)
-                            actions.send_keys("1")
-                            actions.perform()
-                            proper_berry_amount += 1
-                        elif("spicy" in feeder_info_text):
-                            actions = ActionChains(driver)
-                            actions.send_keys("2")
-                            actions.perform()
-                            proper_berry_amount += 1
-                        elif("dry" in feeder_info_text):
-                            actions = ActionChains(driver)
-                            actions.send_keys("3")
-                            actions.perform()
-                            proper_berry_amount += 1
-                        elif("sweet" in feeder_info_text):
-                            actions = ActionChains(driver)
-                            actions.send_keys("4")
-                            actions.perform()
-                            proper_berry_amount += 1
-                        elif("spicy" in feeder_info_text):
-                            actions = ActionChains(driver)
-                            actions.send_keys("5")
-                            actions.perform()
-                            proper_berry_amount += 1 
-                            
-                    #@ if not designated to be "correct" select random berry or if clicking egg/no correct choice pokemon 
-                    else:
-                        random_input = rand.randint(1,5)
-                        actions = ActionChains(driver)
-                        actions.send_keys(str(random_input))
-                        actions.perform()
-                        
-
-                ignored_exceptions=(NoSuchElementException,StaleElementReferenceException,)
-                
-                #@ get number of pokemon left in the run
-                try:
-                    num_pokemon_left = int((WebDriverWait(driver, 3,ignored_exceptions=ignored_exceptions).until(EC.presence_of_element_located((By.XPATH, "//*[@id='infoFeederRemaining']/span"))).text.split())[0])
-                    i = num_pokemon_left
-                    total_berry_amount = number - num_pokemon_left
-                except:
-                    pass
-
-                #@ if on user screen too long end run
-                #@ (which probably means either the run broke, or you ran out of pokemon like in the case of pass orb farming)
-                if("https://gpx.plus/users" in driver.current_url):
-                    break
-            
-            print("Proper Berry Percent: ", str((proper_berry_amount/300)*100), "%")
-            print("Proper Berries: ", str(proper_berry_amount))
-            
-            #@ store stats in mutable object that thread can interact with in a global scale
-            storage[username].append([
-                "    Total Berries: " + str(total_berry_amount),
-                "    Theoretical Percent Correct Berries: " + str(percent_correct_berries),
-                "    Num Proper Berries: " + str(proper_berry_amount),
-                "    Real Num Correct Berries: " + str((proper_berry_amount/total_berry_amount)*100)
-            ])
-            
-            numrunstat[username] += 1
 
 
 #@ Initialize chromedrivers
@@ -363,7 +91,7 @@ passorb = False
 
 RunMasters = {}
 threads = {}
-is_clicking = {}
+is_thread_active = {}
 
 
 window.bind('<Motion>', "???")
@@ -377,7 +105,7 @@ while True:
     #print(parsed_event)
     parsed_values = parseValues(values, accounts)
     #print(parsed_values)
-    #print(is_clicking)
+    #print(is_thread_active)
 
 
     
@@ -390,12 +118,12 @@ while True:
     #@ on "ENTER" key input do run
     elif(event in ('\r', QT_ENTER_KEY1, QT_ENTER_KEY2)):
         username_to_run = parsed_values["tab"]
-        if(not(username_to_run in is_clicking)):
-            is_clicking[username_to_run] = True
+        if(not(username_to_run in is_thread_active)):
+            is_thread_active[username_to_run] = True
             RunMasters[username_to_run] = RunMaster()
             
             threads[username_to_run] = Thread(
-                target = RunMasters[username_to_run].run,
+                target = RunMasters[username_to_run].clickRun,
                 args =(drivers[username_to_run],
                         username_to_run,
                         300,
@@ -407,12 +135,12 @@ while True:
             
             threads[username_to_run].start()
                 
-        elif(not(is_clicking[username_to_run])):
-            is_clicking[username_to_run] = True
+        elif(not(is_thread_active[username_to_run])):
+            is_thread_active[username_to_run] = True
             RunMasters[username_to_run] = RunMaster()
             
             threads[username_to_run] = Thread(
-                target = RunMasters[username_to_run].run,
+                target = RunMasters[username_to_run].clickRun,
                 args =(drivers[username_to_run],
                         username_to_run,
                         300,
@@ -431,12 +159,12 @@ while True:
         if (parsed_event["event"] == "click"):
             
             username_to_run = parsed_event["user"]
-            if(not(username_to_run in is_clicking)):
-                is_clicking[username_to_run] = True
+            if(not(username_to_run in is_thread_active)):
+                is_thread_active[username_to_run] = True
                 RunMasters[username_to_run] = RunMaster()
                 
                 threads[username_to_run] = Thread(
-                    target = RunMasters[username_to_run].run,
+                    target = RunMasters[username_to_run].clickRun,
                     args =(drivers[username_to_run],
                            username_to_run,
                            300,
@@ -448,12 +176,12 @@ while True:
                 
                 threads[username_to_run].start()
                 
-            elif(not(is_clicking[username_to_run])):
-                is_clicking[username_to_run] = True
+            elif(not(is_thread_active[username_to_run])):
+                is_thread_active[username_to_run] = True
                 RunMasters[username_to_run] = RunMaster()
                 
                 threads[username_to_run] = Thread(
-                    target = RunMasters[username_to_run].run,
+                    target = RunMasters[username_to_run].clickRun,
                     args =(drivers[username_to_run],
                            username_to_run,
                            300,
@@ -463,21 +191,50 @@ while True:
                            parsed_values[username_to_run]["elements"]["passorb"],)
                     )
                 threads[username_to_run].start()
-                
-        elif(parsed_event["event"] == "endclick"):
+        #@ end action when endaction button is clicked
+        elif(parsed_event["event"] == "endaction"):
             
             username_to_end = parsed_event["user"]
             RunMasters[username_to_end].terminate()
-            is_clicking[username_to_end] = False
-            drivers[username_to_end].get("https://gpx.plus/users/random/1")
+            is_thread_active[username_to_end] = False
+            drivers[username_to_end].get("https://gpx.plus/main")
             p = vlc.MediaPlayer("https://play.pokemonshowdown.com/audio/cries/wooloo.mp3")
             p.audio_set_volume(50)
             p.play()
+            
+        elif(parsed_event["event"] == "fillparty"):
+            username_to_run = parsed_event["user"]
+            pokemon_name = "Wooloo"
+            if(not(username_to_run in is_thread_active)):
+                is_thread_active[username_to_run] = True
+                RunMasters[username_to_run] = RunMaster()
+                
+                threads[username_to_run] = Thread(
+                    target = RunMasters[username_to_run].fillEggs,
+                    args =(drivers[username_to_run],
+                           username_to_run,
+                           pokemon_name)
+                    )
+                
+                threads[username_to_run].start()
+                
+            elif(not(is_thread_active[username_to_run])):
+                is_thread_active[username_to_run] = True
+                RunMasters[username_to_run] = RunMaster()
+                
+                threads[username_to_run] = Thread(
+                    target = RunMasters[username_to_run].fillEggs,
+                    args =(drivers[username_to_run],
+                           username_to_run,
+                           pokemon_name)
+                    )
+                threads[username_to_run].start()
+            
 
     #@ if a thread is not alive (which means it died for some reason without my intervention) play sound and reset
     for user in threads:
-        if(not(threads[user].is_alive()) and is_clicking[user]):
-            is_clicking[user] = False
+        if(not(threads[user].is_alive()) and is_thread_active[user]):
+            is_thread_active[user] = False
             p = vlc.MediaPlayer("https://play.pokemonshowdown.com/audio/cries/wooloo.mp3")
             p.audio_set_volume(50)
             p.play()
@@ -493,7 +250,6 @@ while True:
             index = 1
             run_amount += 1
             for stat in run:
-                print(stat)
                 run_output.insert(index,stat)
                 index += 1
         if(previous_run_storage_state[user] != run_data_storages[user]):
