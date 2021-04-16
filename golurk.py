@@ -149,7 +149,7 @@ class RunMaster:
 
     
 
-    def run(self, driver, username, number, storage , numruns, passorb):
+    def run(self, driver, username, number, storage, numrunstat, numruns, passorb):
         
         #    [summary]
         #    Used as a target method for thread.
@@ -297,6 +297,8 @@ class RunMaster:
                 "    Num Proper Berries: " + str(proper_berry_amount),
                 "    Real Num Correct Berries: " + str((proper_berry_amount/total_berry_amount)*100)
             ])
+            
+            numrunstat[username] += 1
 
 
 #@ Initialize chromedrivers
@@ -339,12 +341,16 @@ layout = [
 
 #@ initialize data storage
 run_data_storages = {}
+previous_run_storage_state = {}
+runs_completed = {}
 for acc in accounts:
     run_data_storages[acc["user"]] = []
+    previous_run_storage_state[acc["user"]] = []
+    runs_completed[acc["user"]] = 0
 
 window = sg.Window("Golurk", layout, return_keyboard_events=True, use_default_focus=False, finalize=True)
 
-previous_run_storage_state = []
+
 p = vlc.MediaPlayer("https://play.pokemonshowdown.com/audio/cries/wooloo.mp3")
 p.audio_set_volume(50)
 p.play()
@@ -358,7 +364,7 @@ passorb = False
 RunMasters = {}
 threads = {}
 is_clicking = {}
-runs_completed = {}
+
 
 window.bind('<Motion>', "???")
 #@ Create an event loop
@@ -394,6 +400,7 @@ while True:
                         username_to_run,
                         300,
                         run_data_storages,
+                        runs_completed,
                         parsed_values[username_to_run]["elements"]["spin"],
                         parsed_values[username_to_run]["elements"]["passorb"],)
                 )
@@ -410,9 +417,11 @@ while True:
                         username_to_run,
                         300,
                         run_data_storages,
+                        runs_completed,
                         parsed_values[username_to_run]["elements"]["spin"],
                         parsed_values[username_to_run]["elements"]["passorb"],)
                 )
+            threads[username_to_run].start()
     
     
     
@@ -432,6 +441,7 @@ while True:
                            username_to_run,
                            300,
                            run_data_storages,
+                           runs_completed,
                            parsed_values[username_to_run]["elements"]["spin"],
                            parsed_values[username_to_run]["elements"]["passorb"],)
                     )
@@ -448,6 +458,7 @@ while True:
                            username_to_run,
                            300,
                            run_data_storages,
+                           runs_completed,
                            parsed_values[username_to_run]["elements"]["spin"],
                            parsed_values[username_to_run]["elements"]["passorb"],)
                     )
@@ -462,46 +473,34 @@ while True:
             p = vlc.MediaPlayer("https://play.pokemonshowdown.com/audio/cries/wooloo.mp3")
             p.audio_set_volume(50)
             p.play()
+
+    #@ if a thread is not alive (which means it died for some reason without my intervention) play sound and reset
+    for user in threads:
+        if(not(threads[user].is_alive()) and is_clicking[user]):
+            is_clicking[user] = False
+            p = vlc.MediaPlayer("https://play.pokemonshowdown.com/audio/cries/wooloo.mp3")
+            p.audio_set_volume(50)
+            p.play()
     
-    ##@ on clicking "End Click" button end run on thread        
-    #elif event == "End Click":
-    #    for i in range(0, len(RunMasters)):
-    #        RunMasters[i].terminate()
-    #    RunMasters.clear()
-    #    threads.clear()
-    #    is_clicking.clear()
-    #   driver.get("https://gpx.plus/users/random/1")
-    #   p = vlc.MediaPlayer("https://play.pokemonshowdown.com/audio/cries/wooloo.mp3")
-    #    p.audio_set_volume(50)
-    #    p.play()
-    #   
-    ##@ if a thread is not alive (which means it died for some reason without my intervention) play sound and reset
-    #i = 0
-    #for thread in threads:
-    #   if(not(thread.is_alive()) and is_clicking[i]):
-    #        p = vlc.MediaPlayer("https://play.pokemonshowdown.com/audio/cries/wooloo.mp3")
-    #        p.audio_set_volume(50)
-    #        p.play()
-    #        threads.pop(i)
-    #        is_clicking.pop(i)
-    #        RunMasters.pop(i)
-    #    i += 1
-    #    
-    #    
-    #run_data_storages = []
-    #runNum = 1
-    #
-    ##@ form stats list in "storage" in string that can be used by multiline element
-    # for run in run_data_storages:
-    #    run_data_storages.insert(0,"Num Run: " + str(runNum))
-    #    runNum += 1
-    #    index = 1
-    #    for stat in run:
-    #        run_data_storages.insert(index,stat)
-    #        index += 1
-    
-    # if(previous_run_storage_state != run_data_storages):
-    #    window["-RUN LIST-"].update(value = '\n'.join(run_data_storages))
-    # previous_run_storage_state = run_data_storages
+    #@ form stats list in "run_data_storage" in string that can be used by each users multiline element
+    for user in run_data_storages:
+        
+        run_output = []
+        run_amount = 1
+        for run in run_data_storages[user]:
+            
+            run_output.insert(0,"Num Run: " + str(run_amount))
+            index = 1
+            run_amount += 1
+            for stat in run:
+                print(stat)
+                run_output.insert(index,stat)
+                index += 1
+        if(previous_run_storage_state[user] != run_data_storages[user]):
+            print("printing to multiline")
+            window[user + " multiline"].update(value = '\n'.join(run_output))
+            previous_run_storage_state[user] = run_data_storages[user].copy()
+
+
 
 window.close()
