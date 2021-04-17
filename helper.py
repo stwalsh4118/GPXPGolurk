@@ -31,11 +31,11 @@ def loadEggs(fileName):
     file = open(fileName)
     eggs = json.load(file)
     
-    eggFix = []
+    eggFix = {}
     for egg in eggs["eggs"]:
-        eggFix.append(egg)
+        eggFix = {**eggFix, **egg}
     eggs = eggFix
-
+    
     return eggs
 
 #@ end chromedriver
@@ -140,7 +140,9 @@ def createWindow(accounts):
                ),
             sg.Column([[sg.Text('Select Egg to Fill Party With')],
             [sg.Input(do_not_clear=True, size=(30,1),enable_events=True, key=(account["user"] + " searchinput"))],
-            [sg.Listbox(loadEggs("eggs.json")[0], size=(30,20), select_mode = "LISTBOX_SELECT_MODE_SINGLE", enable_events=True, key=(account["user"] + " eggs"))],
+            [sg.Listbox(loadEggs("eggs.json"), size=(30,20), select_mode = "LISTBOX_SELECT_MODE_SINGLE", enable_events=True, key=(account["user"] + " eggs"))],
+            [sg.Text("Currently Selected Egg", font = ("Helvetica", 11, "underline"))],
+            [sg.Text("", size=(30,1), key = (account["user"] + " selectedegg"))]
             ], vertical_alignment = 't')
        ],
        tab_building += [

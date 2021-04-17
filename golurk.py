@@ -83,6 +83,7 @@ passorb = False
 RunMasters = {}
 threads = {}
 is_thread_active = {}
+currently_selected_egg = {}
 
 
 window.bind('<Motion>', "???")
@@ -110,11 +111,17 @@ while True:
         new_values = [x for x in loadEggs("eggs.json")[0] if search in x]
         window.Element(focused_tab + " eggs").Update(new_values)
     else:
-        window.Element(focused_tab + " eggs").Update([x for x in loadEggs("eggs.json")[0]])
+        window.Element(focused_tab + " eggs").Update([x for x in loadEggs("eggs.json")])
         
-    print(parsed_values)
+    #print(parsed_values)
     
-        #@ End program if user closes window or presses the OK button
+    #@ display currently selected egg to fill party with
+    
+    if(parsed_values[focused_tab]["elements"]["eggs"] != []):
+        currently_selected_egg[focused_tab] = parsed_values[focused_tab]["elements"]["eggs"][0]
+        window.Element(focused_tab + " selectedegg").Update(currently_selected_egg[focused_tab])
+    
+    #@ End program if user closes window or presses the OK button
     if ("End Program" in parsed_event or parsed_event == sg.WIN_CLOSED):
         for user in drivers:
             endBot(drivers[user])
@@ -206,10 +213,10 @@ while True:
             p = vlc.MediaPlayer("https://play.pokemonshowdown.com/audio/cries/wooloo.mp3")
             p.audio_set_volume(50)
             p.play()
-            
-        elif(parsed_event["event"] == "fillparty"):
+        
+        #@ run fillparty routine if button is clicked and egg is selected    
+        elif(parsed_event["event"] == "fillparty" and (focused_tab in currently_selected_egg)):
             username_to_run = parsed_event["user"]
-            pokemon_name = "Wooloo"
             if(not(username_to_run in is_thread_active)):
                 is_thread_active[username_to_run] = True
                 RunMasters[username_to_run] = RunMaster()
@@ -218,12 +225,12 @@ while True:
                     target = RunMasters[username_to_run].fillEggs,
                     args =(drivers[username_to_run],
                            username_to_run,
-                           pokemon_name)
+                           currently_selected_egg[focused_tab])
                     )
                 
                 threads[username_to_run].start()
                 
-            elif(not(is_thread_active[username_to_run])):
+            elif(not(is_thread_active[username_to_run]) and (focused_tab in currently_selected_egg)):
                 is_thread_active[username_to_run] = True
                 RunMasters[username_to_run] = RunMaster()
                 
@@ -231,7 +238,7 @@ while True:
                     target = RunMasters[username_to_run].fillEggs,
                     args =(drivers[username_to_run],
                            username_to_run,
-                           pokemon_name)
+                           currently_selected_egg[focused_tab])
                     )
                 threads[username_to_run].start()
             
@@ -239,6 +246,7 @@ while True:
     #@ if a thread is not alive (which means it died for some reason without my intervention) play sound and reset
     for user in threads:
         if(not(threads[user].is_alive()) and is_thread_active[user]):
+            drivers[user].get("https://gpx.plus/main")
             is_thread_active[user] = False
             p = vlc.MediaPlayer("https://play.pokemonshowdown.com/audio/cries/wooloo.mp3")
             p.audio_set_volume(50)
