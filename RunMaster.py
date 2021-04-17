@@ -74,12 +74,15 @@ class RunMaster:
                 #@ wait for egg claim button to appear 
                 #@ (there are cases where the button doesn't appear even when egg IS clicked so we just skip if that happens)
                 t_end = time.time() + 1
-                while(len(driver.find_elements(By.XPATH, "//button[text()='Yes, claim it']")) <= 0 and egg_found and self._running and (time.time() < t_end)):
+                timeout = False
+                while(len(driver.find_elements(By.XPATH, "//button[text()='Yes, claim it']")) <= 0 and egg_found and self._running and not(timeout)):
                     if(len(driver.find_elements(By.CSS_SELECTOR, f"img[data-tooltip='{pokemon_name} Egg']")) <= 0):
                         egg_found = False
                     if(len(driver.find_elements(By.CSS_SELECTOR, "aside[class='tooltip ']")) > 0):
                         egg_found = False
-                    pass
+                    if((time.time() < t_end)):
+                        timeout = True
+                        egg_found = False
                 time.sleep(.5)
                 
                 #@ click confirmation button
