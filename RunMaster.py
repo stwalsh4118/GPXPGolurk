@@ -303,7 +303,7 @@ class RunMaster:
         return
         
 
-    def clickRun(self, driver, username, number, storage, numrunstat, numruns, passorb):
+    def clickRun(self, driver, username, number, storage, numrunstat, numruns, passorb, fullrandom):
         
         #    [summary]
         #
@@ -313,7 +313,7 @@ class RunMaster:
         #
         #    To be used in conjunction with threads in this manner:
         #
-        #*    threads[username] = Thread(target = RunMasters[username].clickRun, args =(driver, username, number, storage, numrunstat, numruns, passorb, ))
+        #*    threads[username] = Thread(target = RunMasters[username].clickRun, args =(driver, username, number, storage, numrunstat, numruns, passorb, fullrandom, ))
         #*    threads[username].start()
         #    
         #    Args:
@@ -324,10 +324,6 @@ class RunMaster:
         #@    passorb (bool): if True selects "Iteract with players that have interacted with you that you haven't" to farm pass orbs
         
         #IDEA: implement time based clicking, so that the different accounts don't look so similar
-        #TODO: ADD FULL RANDOM MODE (search TODO clickRun #1)
-
-        #TODO: CHANGE PERCENT MODE SO THAT THERE IS NO RANDOM CHECK, E.G. IF IT IS SELECTED TO NOT BE THE CORRECT BERRY
-        #TODO: MAKE SURE IT PICKS THE WRONG BERRY (search TODO clickRun #2)
         
         for i in range(numruns):
             
@@ -384,12 +380,12 @@ class RunMaster:
             total_berry_amount = 0
             click = False
             
-            #TODO clickRun #1
-            
             #@ while loop that runs the clicking process
             while(i >= 0 and self._running):
+                
                 #@ get text to know what berry to click
                 try:
+                    
                     #@ if feeder_UI is stale, skip this while step and try again until you can read the text
                     feeder_UI = driver.find_element(By.ID, "infoInteract")
                     feeder_info = feeder_UI.find_element(By.CSS_SELECTOR, "div")
@@ -398,44 +394,73 @@ class RunMaster:
                 except:
                     click = False
 
-                #TODO clickRun #2
-                #@ click depending on which berry
-                if(click):
-                    berry_correctness = rand.randint(0,100)
-                    if(berry_correctness < percent_correct_berries):
-                        if("sour" in feeder_info_text):
-                            actions = ActionChains(driver)
-                            actions.send_keys("1")
-                            actions.perform()
-                            proper_berry_amount += 1
-                        elif("spicy" in feeder_info_text):
-                            actions = ActionChains(driver)
-                            actions.send_keys("2")
-                            actions.perform()
-                            proper_berry_amount += 1
-                        elif("dry" in feeder_info_text):
-                            actions = ActionChains(driver)
-                            actions.send_keys("3")
-                            actions.perform()
-                            proper_berry_amount += 1
-                        elif("sweet" in feeder_info_text):
-                            actions = ActionChains(driver)
-                            actions.send_keys("4")
-                            actions.perform()
-                            proper_berry_amount += 1
-                        elif("spicy" in feeder_info_text):
-                            actions = ActionChains(driver)
-                            actions.send_keys("5")
-                            actions.perform()
-                            proper_berry_amount += 1 
-                            
-                    #@ if not designated to be "correct" select random berry or if clicking egg/no correct choice pokemon 
-                    else:
-                        random_input = rand.randint(1,5)
-                        actions = ActionChains(driver)
-                        actions.send_keys(str(random_input))
-                        actions.perform()
-                        
+
+                if(not(fullrandom)):
+                    
+                    #@ click depending on which berry
+                    if(click):
+                        berry_correctness = rand.randint(0,100)
+                        if(berry_correctness < percent_correct_berries):
+                            if("sour" in feeder_info_text):
+                                actions = ActionChains(driver)
+                                actions.send_keys("1")
+                                actions.perform()
+                                proper_berry_amount += 1
+                            elif("spicy" in feeder_info_text):
+                                actions = ActionChains(driver)
+                                actions.send_keys("2")
+                                actions.perform()
+                                proper_berry_amount += 1
+                            elif("dry" in feeder_info_text):
+                                actions = ActionChains(driver)
+                                actions.send_keys("3")
+                                actions.perform()
+                                proper_berry_amount += 1
+                            elif("sweet" in feeder_info_text):
+                                actions = ActionChains(driver)
+                                actions.send_keys("4")
+                                actions.perform()
+                                proper_berry_amount += 1
+                            elif("spicy" in feeder_info_text):
+                                actions = ActionChains(driver)
+                                actions.send_keys("5")
+                                actions.perform()
+                                proper_berry_amount += 1 
+                                
+                        #@ if not designated to be "correct" select berry that is purposefully wrong or if clicking egg/no correct choice pokemon 
+                        else:
+                            if("sour" in feeder_info_text):
+                                actions = ActionChains(driver)
+                                actions.send_keys("2")
+                                actions.perform()
+                                proper_berry_amount += 1
+                            elif("spicy" in feeder_info_text):
+                                actions = ActionChains(driver)
+                                actions.send_keys("3")
+                                actions.perform()
+                                proper_berry_amount += 1
+                            elif("dry" in feeder_info_text):
+                                actions = ActionChains(driver)
+                                actions.send_keys("4")
+                                actions.perform()
+                                proper_berry_amount += 1
+                            elif("sweet" in feeder_info_text):
+                                actions = ActionChains(driver)
+                                actions.send_keys("5")
+                                actions.perform()
+                                proper_berry_amount += 1
+                            elif("spicy" in feeder_info_text):
+                                actions = ActionChains(driver)
+                                actions.send_keys("1")
+                                actions.perform()
+                                proper_berry_amount += 1 
+
+                #@ pick berry completely randomly (should have a 1:5 proper berry input to interaction ratio)
+                else:
+                    random_input = rand.randint(1,5)
+                    actions = ActionChains(driver)
+                    actions.send_keys(str(random_input))
+                    actions.perform()
 
                 ignored_exceptions=(NoSuchElementException,StaleElementReferenceException,)
                 

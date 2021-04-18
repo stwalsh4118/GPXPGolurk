@@ -103,7 +103,9 @@ while True:
     #print(is_thread_active)
 
 
-    
+    #TODO: ADD CHECKBOX FOR FULLRANDOM CLICKING MODE, ALSO NEED TO ADD PERCENT RANGE INPUT FOR THE NON-RANDOM MODE
+    #TODO: PROBABLY NEED TO REWORK INPUT CONFIGURATIONS FOR ROUTINE METHODS INTO A CONFIGURATION OBJECT SO THERES NOT INFINITE PARAMS
+    #TODO: ^GONNA DRAG MY FEET ON THIS THOUGH UNTIL ITS TOO LATE AND IM MAD AT MYSELF LMAO
 
     #@ filter egg names
     if(parsed_values[focused_tab]["elements"]["searchinput"] != ""):
@@ -144,7 +146,9 @@ while True:
                         run_data_storages,
                         runs_completed,
                         parsed_values[username_to_run]["elements"]["spin"],
-                        parsed_values[username_to_run]["elements"]["passorb"],)
+                        parsed_values[username_to_run]["elements"]["passorb"],
+                        True,    
+                    )
                 )
             
             threads[username_to_run].start()
@@ -161,7 +165,8 @@ while True:
                         run_data_storages,
                         runs_completed,
                         parsed_values[username_to_run]["elements"]["spin"],
-                        parsed_values[username_to_run]["elements"]["passorb"],)
+                        parsed_values[username_to_run]["elements"]["passorb"],
+                        True,  )
                 )
             threads[username_to_run].start()
     
@@ -185,7 +190,8 @@ while True:
                            run_data_storages,
                            runs_completed,
                            parsed_values[username_to_run]["elements"]["spin"],
-                           parsed_values[username_to_run]["elements"]["passorb"],)
+                           parsed_values[username_to_run]["elements"]["passorb"],
+                           True,  )
                     )
                 
                 threads[username_to_run].start()
@@ -202,7 +208,8 @@ while True:
                            run_data_storages,
                            runs_completed,
                            parsed_values[username_to_run]["elements"]["spin"],
-                           parsed_values[username_to_run]["elements"]["passorb"],)
+                           parsed_values[username_to_run]["elements"]["passorb"],
+                           True,  )
                     )
                 threads[username_to_run].start()
         #@ end action when endaction button is clicked
