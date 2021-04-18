@@ -47,7 +47,9 @@ class RunMaster:
         #@   username (string): the username for which account/driver you are running
         #@   pokemon_name (string): the pokemon name for which egg you are looking for to fill up your party
         
+        #!testing
         
+        self.hatchEggs(driver, username, 3)
         
         #@ Navigate to shelter screen
         driver.find_element(By.CSS_SELECTOR, "a[data-page='shelter']").click()
@@ -138,15 +140,22 @@ class RunMaster:
         #@   username (string): username for account of the driver
         #@   box_number (int): box number to start search for box to put pokemon into to use in movePokemon function after hatching
         
-        #TODO: READ MESSAGE AFTER HATCHING EGGS AND SEE IF YOU GOT A SHINY AND MOVE IT TO A DIFFERENT BOX THAT IS LOCKED
-        #TODO: ALSO NEED TO CLOSE SAID MESSAGE AFTER HATCHING EGGS (search for "TODO hatchEggs #1")
-        
+        #TODO: NEED TO HAVE A SYSTEM THAT KNOWS WHICH BOX TO PUT YOUR SHINY INTO (search "TODO: hatchEggs #2")
+        #TODO: OPTIONS ARE:
+        #TODO:           DO A CHECK IN THE PC TO SEE WHICH BOXES ARE PROTECTED 
+        #TODO:                  (WE CAN ALSO CHECK IF PROTECTED IS FULL AND THEN MAKE ANOTHER PROTECTED BOX TO FILL UP, AD INFINITUM)
+        #TODO:           MANUALY PICK (NOT GOOD FOR AUTOMATIC MODE)
+        #TODO:           SELECT THE FIRST BOX WITH ROOM(NOT GOOD BECAUSE REQUIRES MANUAL CHECKING FOR SHINIES WHICH THIS IS SUPPOSED TO REMEDY)
+        #TODO:           SAVE FIRST X AMOUNT OF BOXES TO BE RESERVED FOR SPECIAL POKEMON IMPLICITLY (THIS ONES OK, BUT PROBLEM IF FILLED)
         
         #@ go to main page
-        driver.get("https://gpx.plus/main")
+        driver.get("https://gpx.plus/main")       
         
         #@ check for hatch button (may be disabled if eggs not mature for 1 hour I think)
-        if(len(driver.find_elements(By.CSS_SELECTOR, "span[class='pkAllHatch']")) <= 0): return
+        #@ move any pokemon that need to be then stop hatching
+        if(len(driver.find_elements(By.CSS_SELECTOR, "span[class='pkAllHatch']")) <= 0): 
+            self.movePokemon(driver, box_number) 
+            return
 
         #@ click hatch button
         driver.find_elements(By.CSS_SELECTOR, "span[class='pkAllHatch']")[0].click()
@@ -165,13 +174,56 @@ class RunMaster:
         #@ click the hatch confirmation button
         driver.find_elements(By.XPATH, "//button[text()='Yes, hatch them']")[0].click()
         
+        #@ wait for post-hatch alert that tells you what you hatched
+        while(len(driver.find_elements(By.XPATH, "//div[contains(text(), 'Your egg hatched into')]")) <= 0):
+            pass
         
-        #TODO: hatchEggs #1
+        print(driver.find_elements(By.XPATH, "//div[contains(text(), 'Your egg hatched into')]")[0].text)
+        
+        #@ get list of events that happened during hatching (includes items being found on pokemon)
+        hatched_info = driver.find_elements(By.XPATH, "//div[contains(text(), 'Your egg hatched into')]")[0].text.split("\n")
+        print(hatched_info)
+        
+        #@ check if there is a shiny among the pokemon hatched and get its position in your party
+        index = 1
+        shiny_index = -1
+        for hatched in hatched_info:
+            print(hatched)
+            if("Your egg hatched into Sh." in hatched):
+                print("Shiny hatched!")
+                shiny_index = index
+            index += 1
+            
+        #@ close post-hatch alert
+        driver.find_elements(By.CSS_SELECTOR, "span[class='ui-icon ui-icon-closethick']")[0].click()
+        
+        #TODO: hatchEggs #2
+        #@ if there is a shiny that was hatched move it into box specified
+        shiny_box = 1
+        if(shiny_index != -1):
+            driver.find_elements(By.XPATH, f"//*[@id='UserParty']/li[{shiny_index}]/div[4]/span[1]")[0].click()
+            
+            for box_index in range(15 + shiny_box):
+                actions = ActionChains(driver)
+                actions.send_keys(Keys.DOWN)
+                actions.perform()
+            time.sleep(.5)
+            
+            actions = ActionChains(driver)
+            actions.send_keys(Keys.ENTER)
+            actions.perform()
+            time.sleep(.5)
+            
+            actions = ActionChains(driver)
+            actions.send_keys(Keys.ENTER)
+            actions.perform()
+            time.sleep(.5)
+        
         
         
         #@ move pokemon into box
         self.movePokemon(driver, box_number)
-        
+
         return
     
     
@@ -271,6 +323,12 @@ class RunMaster:
         #@    numruns (int x > 0): number of click runs to complete in a row
         #@    passorb (bool): if True selects "Iteract with players that have interacted with you that you haven't" to farm pass orbs
         
+        #IDEA: implement time based clicking, so that the different accounts don't look so similar
+        #TODO: ADD FULL RANDOM MODE (search TODO clickRun #1)
+
+        #TODO: CHANGE PERCENT MODE SO THAT THERE IS NO RANDOM CHECK, E.G. IF IT IS SELECTED TO NOT BE THE CORRECT BERRY
+        #TODO: MAKE SURE IT PICKS THE WRONG BERRY (search TODO clickRun #2)
+        
         for i in range(numruns):
             
             if(self._running):
@@ -326,6 +384,8 @@ class RunMaster:
             total_berry_amount = 0
             click = False
             
+            #TODO clickRun #1
+            
             #@ while loop that runs the clicking process
             while(i >= 0 and self._running):
                 #@ get text to know what berry to click
@@ -338,7 +398,7 @@ class RunMaster:
                 except:
                     click = False
 
-
+                #TODO clickRun #2
                 #@ click depending on which berry
                 if(click):
                     berry_correctness = rand.randint(0,100)
