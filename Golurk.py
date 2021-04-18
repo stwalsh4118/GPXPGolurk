@@ -106,6 +106,7 @@ while True:
     #TODO: ADD CHECKBOX FOR FULLRANDOM CLICKING MODE, ALSO NEED TO ADD PERCENT RANGE INPUT FOR THE NON-RANDOM MODE
     #TODO: PROBABLY NEED TO REWORK INPUT CONFIGURATIONS FOR ROUTINE METHODS INTO A CONFIGURATION OBJECT SO THERES NOT INFINITE PARAMS
     #TODO: ^GONNA DRAG MY FEET ON THIS THOUGH UNTIL ITS TOO LATE AND IM MAD AT MYSELF LMAO
+    #IDEA: ALSO PER USER CONFIGURATION SAVING WOULD BE NICE, AND SAVED TO FILE/DB WOULD BE COOL SO LAST USED CONFIG WILL LOAD ON PROGRAM START
 
     #@ filter egg names
     if(parsed_values[focused_tab]["elements"]["searchinput"] != ""):
@@ -147,7 +148,8 @@ while True:
                         runs_completed,
                         parsed_values[username_to_run]["elements"]["spin"],
                         parsed_values[username_to_run]["elements"]["passorb"],
-                        True,    
+                        True,
+                        currently_selected_egg[username_to_run],    
                     )
                 )
             
@@ -166,7 +168,8 @@ while True:
                         runs_completed,
                         parsed_values[username_to_run]["elements"]["spin"],
                         parsed_values[username_to_run]["elements"]["passorb"],
-                        True,  )
+                        True,
+                        currently_selected_egg[username_to_run],)
                 )
             threads[username_to_run].start()
     
@@ -191,7 +194,8 @@ while True:
                            runs_completed,
                            parsed_values[username_to_run]["elements"]["spin"],
                            parsed_values[username_to_run]["elements"]["passorb"],
-                           True,  )
+                           True,
+                           currently_selected_egg[username_to_run],)
                     )
                 
                 threads[username_to_run].start()
@@ -209,7 +213,8 @@ while True:
                            runs_completed,
                            parsed_values[username_to_run]["elements"]["spin"],
                            parsed_values[username_to_run]["elements"]["passorb"],
-                           True,  )
+                           True,
+                           currently_selected_egg[username_to_run],)
                     )
                 threads[username_to_run].start()
         #@ end action when endaction button is clicked

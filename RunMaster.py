@@ -18,8 +18,8 @@ from helper import *
 import re
 
 
-#TODO: INTEGRATE HATCHING EGGS, FILLING EGGS, AND MOVING POKEMON FUNCTIONS INTO CLICK RUN FUNCTION SO WE CAN GET AND HATCH EGGS
-#TODO: AUTOMATICALLY IN THE MIDDLE OF CLICK RUNS (EVENTUALLY HAVE FULL AUTO OPTION SO IT WILL JUST RUN AND CLICK AND HATCH EGGS FOR YOU)
+
+#TODO: EVENTUALLY HAVE FULL AUTO OPTION SO IT WILL JUST RUN AND CLICK AND HATCH EGGS FOR YOU
 
 class RunMaster:
       
@@ -47,9 +47,7 @@ class RunMaster:
         #@   username (string): the username for which account/driver you are running
         #@   pokemon_name (string): the pokemon name for which egg you are looking for to fill up your party
         
-        #!testing
-        
-        self.hatchEggs(driver, username, 3)
+        if(pokemon_name == None or pokemon_name == ""): return 
         
         #@ Navigate to shelter screen
         driver.find_element(By.CSS_SELECTOR, "a[data-page='shelter']").click()
@@ -240,8 +238,11 @@ class RunMaster:
         
         #TODO: MAKE IT SO THAT IT CHECKS AGAINST NUMBER IN PARTY NOT JUST MAX PARTY AMOUNT (search for "TODO: movePokemon #1")
         
-        #@ wait for move all pokemon button to appear
+        #@ wait for move all pokemon button to appear, return if it doesn't show up or is disabled
+        t_end = time.time() + 1
         while(len(driver.find_elements(By.CSS_SELECTOR, "span[class='pkAllMove']")) <= 0):
+            if(time.time() > t_end):
+                return
             pass
         
         #@ click move all pokemon button
@@ -266,7 +267,7 @@ class RunMaster:
             
             #TODO: movePokemon #1
             #@ check if box has enough room to put our pokemon in
-            if((num_in_box - 6) > 0):
+            if((num_in_box - 6) >= 0):
                 selected_box = box_index
                 break
             
@@ -303,7 +304,7 @@ class RunMaster:
         return
         
 
-    def clickRun(self, driver, username, number, storage, numrunstat, numruns, passorb, fullrandom):
+    def clickRun(self, driver, username, number, storage, numrunstat, numruns, passorb, fullrandom, pokemon_name):
         
         #    [summary]
         #
@@ -313,7 +314,7 @@ class RunMaster:
         #
         #    To be used in conjunction with threads in this manner:
         #
-        #*    threads[username] = Thread(target = RunMasters[username].clickRun, args =(driver, username, number, storage, numrunstat, numruns, passorb, fullrandom, ))
+        #*    threads[username] = Thread(target = RunMasters[username].clickRun, args =(driver, username, number, storage, numrunstat, numruns, passorb, fullrandom, pokemon_name))
         #*    threads[username].start()
         #    
         #    Args:
@@ -324,7 +325,7 @@ class RunMaster:
         #@    passorb (bool): if True selects "Iteract with players that have interacted with you that you haven't" to farm pass orbs
         
         #IDEA: implement time based clicking, so that the different accounts don't look so similar
-        
+        #TODO: MAKE IT SO PROPER BERRIES ARE STILL COUNTED FOR RANDOM MODE (search TODO: clickRun #1)
         for i in range(numruns):
             
             if(self._running):
@@ -454,13 +455,14 @@ class RunMaster:
                                 actions.send_keys("1")
                                 actions.perform()
                                 proper_berry_amount += 1 
-
+                #TODO: clickRun #1
                 #@ pick berry completely randomly (should have a 1:5 proper berry input to interaction ratio)
                 else:
-                    random_input = rand.randint(1,5)
-                    actions = ActionChains(driver)
-                    actions.send_keys(str(random_input))
-                    actions.perform()
+                    if(click):
+                        random_input = rand.randint(1,5)
+                        actions = ActionChains(driver)
+                        actions.send_keys(str(random_input))
+                        actions.perform()
 
                 ignored_exceptions=(NoSuchElementException,StaleElementReferenceException,)
                 
@@ -489,4 +491,9 @@ class RunMaster:
             ])
             
             numrunstat[username] += 1
+            
+            #@ hatch any eggs you can then fill your party back with eggs after every mass click run
+            self.hatchEggs(driver, username, 3)
+            self.fillEggs(driver, username, pokemon_name)
+            
         return
