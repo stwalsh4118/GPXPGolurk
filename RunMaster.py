@@ -47,6 +47,10 @@ class RunMaster:
         #@   username (string): the username for which account/driver you are running
         #@   pokemon_name (string): the pokemon name for which egg you are looking for to fill up your party
         
+                
+        #TODO: PROBABLY SHOULD HAVE A TIMEOUT IF LOOKING FOR EGGS FOR TOO LONG
+        #TODO: IF TIMED OUT, CHECK IF YOU HAVE EGGS READY TO DONATE TO SHELTER IN YOUR DAYCARE (search "TODO: fillEggs #1")
+        
         if(pokemon_name == None or pokemon_name == ""): return 
         
         #@ Navigate to shelter screen
@@ -67,6 +71,8 @@ class RunMaster:
         image_search = egg_list[pokemon_name]["image"]
         print(num_party_members < 6)
         
+        
+        #TODO: fillEggs #1  
         #@ while party isnt full
         while(num_party_members < 6):
             num_party_members = int(driver.find_element(By.CSS_SELECTOR, "div[data-notification='party']").text)
@@ -145,6 +151,7 @@ class RunMaster:
         #TODO:           MANUALY PICK (NOT GOOD FOR AUTOMATIC MODE)
         #TODO:           SELECT THE FIRST BOX WITH ROOM(NOT GOOD BECAUSE REQUIRES MANUAL CHECKING FOR SHINIES WHICH THIS IS SUPPOSED TO REMEDY)
         #TODO:           SAVE FIRST X AMOUNT OF BOXES TO BE RESERVED FOR SPECIAL POKEMON IMPLICITLY (THIS ONES OK, BUT PROBLEM IF FILLED)
+
         
         #@ go to main page
         driver.get("https://gpx.plus/main")       
@@ -161,6 +168,8 @@ class RunMaster:
         #@ wait for hatch all button to appear
         while(len(driver.find_elements(By.CSS_SELECTOR, "span[class='pkAllAll']")) <= 0):
             pass
+        
+        time.sleep(.5)
         
         #@ click hatch all button
         driver.find_elements(By.CSS_SELECTOR, "span[class='pkAllAll']")[0].click()
@@ -244,7 +253,8 @@ class RunMaster:
             if(time.time() > t_end):
                 return
             pass
-        
+        time.sleep(.5)
+            
         #@ click move all pokemon button
         driver.find_elements(By.CSS_SELECTOR, "span[class='pkAllMove']")[0].click()
         time.sleep(.5)
@@ -476,6 +486,7 @@ class RunMaster:
 
                 #@ if on user screen too long end run
                 #@ (which probably means either the run broke, or you ran out of pokemon like in the case of pass orb farming)
+                #TODO: THIS IS DEFINITLY NOT THE BEST WAY TO DO THIS, BREAKS IF SERVERS RUNNING SLOW
                 if("https://gpx.plus/users" in driver.current_url):
                     break
             
