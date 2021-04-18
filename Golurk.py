@@ -124,6 +124,8 @@ while True:
     #@ End program if user closes window or presses the OK button
     if ("End Program" in parsed_event or parsed_event == sg.WIN_CLOSED):
         for user in drivers:
+            if(user in RunMasters): 
+                RunMasters[user].terminate()
             endBot(drivers[user])
         break
     
@@ -243,7 +245,7 @@ while True:
                 threads[username_to_run].start()
             
 
-    #@ if a thread is not alive (which means it died for some reason without my intervention) play sound and reset
+    #@ if a thread is not alive (which means it died for some reason without my intervention) go to main page, play sound, and reset
     for user in threads:
         if(not(threads[user].is_alive()) and is_thread_active[user]):
             drivers[user].get("https://gpx.plus/main")

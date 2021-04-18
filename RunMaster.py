@@ -1,5 +1,5 @@
 import time
-from PySimpleGUI.PySimpleGUI import Checkbox
+from PySimpleGUI.PySimpleGUI import B, Checkbox
 import vlc
 from threading import Thread
 from selenium.webdriver import Chrome
@@ -15,6 +15,11 @@ import PySimpleGUI as sg
 import random as rand
 import json
 from helper import *
+import re
+
+
+#TODO: INTEGRATE HATCHING EGGS, FILLING EGGS, AND MOVING POKEMON FUNCTIONS INTO CLICK RUN FUNCTION SO WE CAN GET AND HATCH EGGS
+#TODO: AUTOMATICALLY IN THE MIDDLE OF CLICK RUNS (EVENTUALLY HAVE FULL AUTO OPTION SO IT WILL JUST RUN AND CLICK AND HATCH EGGS FOR YOU)
 
 class RunMaster:
       
@@ -25,6 +30,25 @@ class RunMaster:
         self._running = False
 
     def fillEggs(self, driver, username, pokemon_name):
+        
+        #   [summary]
+        #   
+        #    Runs routine that fills your party with the specified pokemons eggs
+        #
+        #    Used as a target method for thread.
+        #
+        #    To be used in conjunction with threads in this manner:
+        #
+        #*    threads[username] = Thread(target = RunMasters[username].fillEggs, args =(driver, username, pokemon_name, ))
+        #*    threads[username].start()
+        #
+        #   Args:
+        #@   driver (Chrome webdriver): the driver of the Chrome application you are running
+        #@   username (string): the username for which account/driver you are running
+        #@   pokemon_name (string): the pokemon name for which egg you are looking for to fill up your party
+        
+        
+        
         #@ Navigate to shelter screen
         driver.find_element(By.CSS_SELECTOR, "a[data-page='shelter']").click()
         print(driver.current_url)
@@ -58,6 +82,7 @@ class RunMaster:
             #@ if you have already discovered/hatched the egg and revealed the egg name in the shelter
             #@ will need to implement the check if you have the egg data in your pokedex before using this
             #@ but for now we assume you already have egg data for the egg selected
+            
             egg_found = False
             if(len(driver.find_elements(By.CSS_SELECTOR, f"img[data-tooltip='{pokemon_name} Egg']")) > 0):
                 print("Egg found")
@@ -99,16 +124,144 @@ class RunMaster:
             if(not(self._running)):
                 break
         return
+    
+    
+    
+    def hatchEggs(self, driver, username, box_number):
+        
+        #   [summary]
+        #   
+        #    Hatch all eggs in your party that are mature
+        #
+        #   Args:
+        #@   driver (Chrome webdriver): the driver of the Chrome application you are running
+        #@   username (string): username for account of the driver
+        #@   box_number (int): box number to start search for box to put pokemon into to use in movePokemon function after hatching
+        
+        #TODO: READ MESSAGE AFTER HATCHING EGGS AND SEE IF YOU GOT A SHINY AND MOVE IT TO A DIFFERENT BOX THAT IS LOCKED
+        #TODO: ALSO NEED TO CLOSE SAID MESSAGE AFTER HATCHING EGGS (search for "TODO hatchEggs #1")
+        
+        
+        #@ go to main page
+        driver.get("https://gpx.plus/main")
+        
+        #@ check for hatch button (may be disabled if eggs not mature for 1 hour I think)
+        if(len(driver.find_elements(By.CSS_SELECTOR, "span[class='pkAllHatch']")) <= 0): return
+
+        #@ click hatch button
+        driver.find_elements(By.CSS_SELECTOR, "span[class='pkAllHatch']")[0].click()
+        
+        #@ wait for hatch all button to appear
+        while(len(driver.find_elements(By.CSS_SELECTOR, "span[class='pkAllAll']")) <= 0):
+            pass
+        
+        #@ click hatch all button
+        driver.find_elements(By.CSS_SELECTOR, "span[class='pkAllAll']")[0].click()
+        
+        #@ wait for hatch confirmation button to appear
+        while(len(driver.find_elements(By.XPATH, "//button[text()='Yes, hatch them']")) <= 0):
+            pass
+        
+        #@ click the hatch confirmation button
+        driver.find_elements(By.XPATH, "//button[text()='Yes, hatch them']")[0].click()
+        
+        
+        #TODO: hatchEggs #1
+        
+        
+        #@ move pokemon into box
+        self.movePokemon(driver, box_number)
+        
+        return
+    
+    
+
+    def movePokemon(self, driver, box_number):
+            
+        #   [summary]
+        #   
+        #    Used to move pokemon from your party into a PC starting at a certain box number so the ones before are not changed
+        #
+        #   Args:
+        #@   driver (Chrome webdriver): the driver of the Chrome application you are running
+        #@   box_number (int): box number to start search for box to put pokemon into
+        
+        #TODO: MAKE IT SO THAT IT CHECKS AGAINST NUMBER IN PARTY NOT JUST MAX PARTY AMOUNT (search for "TODO: movePokemon #1")
+        
+        #@ wait for move all pokemon button to appear
+        while(len(driver.find_elements(By.CSS_SELECTOR, "span[class='pkAllMove']")) <= 0):
+            pass
+        
+        #@ click move all pokemon button
+        driver.find_elements(By.CSS_SELECTOR, "span[class='pkAllMove']")[0].click()
+        time.sleep(.5)
+        
+        
+        #@ find box to put all pokemon in starting with box_number given
+        box_index = box_number
+        selected_box = 0
+        while(True):
+            num_in_box = \
+                (
+                    driver\
+                    .find_element(By.CSS_SELECTOR, "span[class='button toggleButton pkAllAllPC']")\
+                    .get_attribute(f"data-{box_index}")\
+                    .split(" ")[2]
+                )
+            num_in_box = int(re.findall(r"\[\s*\+?(-?\d+)\s*\]", num_in_box)[0])
+            print(f"Number of pokemon in box {box_index} : {num_in_box}")
+            
+            
+            #TODO: movePokemon #1
+            #@ check if box has enough room to put our pokemon in
+            if((num_in_box - 6) > 0):
+                selected_box = box_index
+                break
+            
+            box_index += 1
+            if(box_index > 24):
+                break 
+        
+        print(f"The selected box is {selected_box}")
+        
+        #@ click move all to box button
+        driver.find_elements(By.CSS_SELECTOR, "span[class='button toggleButton pkAllAllPC']")[0].click()  
+        
+        #@ move selector to the box we selected
+        for i in range(selected_box):
+            actions = ActionChains(driver)
+            actions.send_keys(Keys.DOWN)
+            actions.perform()
+        time.sleep(.5)
+        
+        #@ click enter to choose the box we selected to move our pokemon into
+        actions = ActionChains(driver)
+        actions.send_keys(Keys.ENTER)
+        actions.perform()
+        time.sleep(.5)
+        
+        #@ wait for move confirmation button to show up
+        while(len(driver.find_elements(By.XPATH, "//button[text()='Yes, move them']")) <= 0):
+            pass
+        
+        #@ click move confirmation button
+        driver.find_elements(By.XPATH, "//button[text()='Yes, move them']")[0].click()
+        time.sleep(.5)
+        
+        return
         
 
     def clickRun(self, driver, username, number, storage, numrunstat, numruns, passorb):
         
         #    [summary]
+        #
+        #    Runs routine that automates massclicks
+        #
         #    Used as a target method for thread.
         #
         #    To be used in conjunction with threads in this manner:
         #
-        #*    threads[username] = Thread(target = c.run, args =(driver, username, number, storage, numrunstat, numruns, passorb, ))
+        #*    threads[username] = Thread(target = RunMasters[username].clickRun, args =(driver, username, number, storage, numrunstat, numruns, passorb, ))
         #*    threads[username].start()
         #    
         #    Args:
