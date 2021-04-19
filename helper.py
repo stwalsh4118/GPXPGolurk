@@ -159,3 +159,68 @@ def createWindow(accounts):
            sg.Tab(title = account["user"] + "'s tab", layout = tab_building)
        ],
     return tabs
+
+
+def clickElementWait(driver, selector, locator, wait_time):
+    
+    if(selector == "XPATH"):
+        
+        try:
+            element = WebDriverWait(driver, wait_time).until(EC.element_to_be_clickable((By.XPATH, locator)))
+            
+        except Exception as e:
+            print(e)
+            raise Exception(f"Could not click element selected by {selector} at location {locator}")
+        
+        element.click()
+        
+        
+    elif(selector == "CSS"):
+        
+        try:
+            element = WebDriverWait(driver, wait_time).until(EC.element_to_be_clickable((By.CSS_SELECTOR, locator)))
+            
+        except Exception as e:
+            print(e)
+            raise Exception(f"Could not click element selected by {selector} at location {locator}")
+        
+        element.click()
+        
+        
+    elif(selector == "ID"):
+        
+        try:
+            element = WebDriverWait(driver, wait_time).until(EC.element_to_be_clickable((By.ID, locator)))
+            
+        except Exception as e:
+            print(e)
+            raise Exception(f"Could not click element selected by {selector} at location {locator}")
+        
+        element.click()
+        
+        
+    elif(selector == "NAME"):
+        
+        try:
+            element = WebDriverWait(driver, wait_time).until(EC.element_to_be_clickable((By.NAME, locator)))
+            
+        except Exception as e:
+            print(e)
+            raise Exception(f"Could not click element selected by {selector} at location {locator}")
+        
+        element.click()
+        
+        
+    elif(selector == "LINK_TEXT"):
+        
+        try:
+            element = WebDriverWait(driver, wait_time).until(EC.element_to_be_clickable((By.LINK_TEXT, locator)))
+            
+        except Exception as e:
+            print(e)
+            raise Exception(f"Could not click element selected by {selector} at location {locator}")
+        
+        element.click()
+    
+    return
+    

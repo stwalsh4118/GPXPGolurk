@@ -87,7 +87,6 @@ currently_selected_egg = {}
 
 
 window.bind('<Motion>', "???")
-names = ['Roberta', 'Kylie', 'Jenny', 'Helen','Andrea', 'Meredith','Deborah','Pauline','Belinda', 'Wendy']
 
 #@ pysimplegui event loop
 while True:

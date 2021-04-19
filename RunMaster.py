@@ -76,7 +76,6 @@ class RunMaster:
         # #@ check if selected pokemon is within our dataset
         # if(not(pokemon_name in egg_list)): return print("pokemon not in data")
         # image_search = egg_list[pokemon_name]["image"]
-        print(num_party_members < 6)
         
         
         #TODO: fillEggs #1  
@@ -100,8 +99,12 @@ class RunMaster:
                 self.gatherEgg(driver, pokemon_name)
             
             #@ reload shelter
-            if(len(driver.find_elements(By.CSS_SELECTOR, "span[class='shelterLoad']")) > 0):
-                driver.find_elements(By.CSS_SELECTOR, "span[class='shelterLoad']")[0].click()
+            try:
+                clickElementWait(driver, "CSS", "span[class='shelterLoad']", 3)
+                time.sleep(.5)
+            except Exception as e:
+                print(e)
+                return
             
             #@ quit if end action button is pressed
             if(not(self._running)):
@@ -123,9 +126,10 @@ class RunMaster:
             #@ try to click egg (theres several scenarios where you can't click the egg even if its there like if another egg is on top)
             #@ so we just skip and reload the shelter
             try:
-                driver.find_elements(By.CSS_SELECTOR, f"img[data-tooltip='{pokemon_name} Egg']")[0].click()
+                clickElementWait(driver, "CSS", f"img[data-tooltip='{pokemon_name} Egg']", 1)
                 time.sleep(.5)
-            except:
+            except Exception as e:
+                print(e)
                 egg_found = False
             
             #@ wait for egg claim button to appear 
@@ -144,9 +148,9 @@ class RunMaster:
             
             #@ click confirmation button
             if(egg_found):
-                driver.find_elements(By.XPATH, "//button[text()='Yes, claim it']")[0].click()
+                clickElementWait(driver, "XPATH", "//button[text()='Yes, claim it']", 3)
                 time.sleep(.5)
-            print("confirmation clicked")
+                print("confirmation clicked")
             
         return
     
@@ -185,16 +189,10 @@ class RunMaster:
             return
 
         #@ click hatch button
-        driver.find_elements(By.CSS_SELECTOR, "span[class='pkAllHatch']")[0].click()
-        
-        #@ wait for hatch all button to appear
-        while(len(driver.find_elements(By.CSS_SELECTOR, "span[class='pkAllAll']")) <= 0):
-            pass
-        
-        time.sleep(.5)
+        clickElementWait(driver, "CSS", "span[class='pkAllHatch']", 3)
         
         #@ click hatch all button
-        driver.find_elements(By.CSS_SELECTOR, "span[class='pkAllAll']")[0].click()
+        clickElementWait(driver, "CSS", "span[class='pkAllAll']", 3)
         
         #@ wait for hatch confirmation button to appear
         while(len(driver.find_elements(By.XPATH, "//button[text()='Yes, hatch them']")) <= 0):
@@ -203,9 +201,9 @@ class RunMaster:
         
         #@ click the hatch confirmation button
         try:
-            driver.find_elements(By.XPATH, "//button[text()='Yes, hatch them']")[0].click()
-        except Exception:
-            print(Exception)
+            clickElementWait(driver, "XPATH", "//button[text()='Yes, hatch them']", 3)
+        except Exception as e:
+            print(e)
             return
         
         #@ wait for post-hatch alert that tells you what you hatched
@@ -231,22 +229,14 @@ class RunMaster:
         #@ close post-hatch alert
         t_end = time.time() + 2
         timeout = False
-        while(not(timeout)):
-            try:
-                driver.find_elements(By.CSS_SELECTOR, "span[class='ui-icon ui-icon-closethick']")[0].click()
-                timeout = True
-            except Exception:
-                print(Exception)
-                timeout = False
-            if(time.time() > t_end):
-                timeout = True
+        clickElementWait(driver, "CSS", "span[class='ui-icon ui-icon-closethick']", 3)
             
         
         #TODO: hatchEggs #2
         #@ if there is a shiny that was hatched move it into box specified
         shiny_box = 1
         if(shiny_index != -1):
-            driver.find_elements(By.XPATH, f"//*[@id='UserParty']/li[{shiny_index}]/div[4]/span[1]")[0].click()
+            clickElementWait(driver, "XPATH", f"//*[@id='UserParty']/li[{shiny_index}]/div[4]/span[1]", 3)
             
             for box_index in range(15 + shiny_box):
                 actions = ActionChains(driver)
@@ -289,18 +279,12 @@ class RunMaster:
         
         #IDEA: PRINT SAVE DATA WHEN POKEMON ARE MOVED
         
-        #@ wait for move all pokemon button to appear, return if it doesn't show up or is disabled
-        t_end = time.time() + 1
-        while(len(driver.find_elements(By.CSS_SELECTOR, "span[class='pkAllMove']")) <= 0):
-            if(time.time() > t_end):
-                return
-        time.sleep(.5)
             
         #@ click move all pokemon button
         try:
-            driver.find_elements(By.CSS_SELECTOR, "span[class='pkAllMove']")[0].click()
-        except Exception:
-            print(Exception)
+            clickElementWait(driver, "CSS", "span[class='pkAllMove']", 3)
+        except Exception as e:
+            print(e)
             return
         time.sleep(.5)
         
@@ -333,7 +317,7 @@ class RunMaster:
         print(f"The selected box is {selected_box}")
         
         #@ click move all to box button
-        driver.find_elements(By.CSS_SELECTOR, "span[class='button toggleButton pkAllAllPC']")[0].click()  
+        clickElementWait(driver, "CSS", "span[class='button toggleButton pkAllAllPC']", 3)
         
         #@ move selector to the box we selected
         for i in range(selected_box):
@@ -348,12 +332,8 @@ class RunMaster:
         actions.perform()
         time.sleep(.5)
         
-        #@ wait for move confirmation button to show up
-        while(len(driver.find_elements(By.XPATH, "//button[text()='Yes, move them']")) <= 0):
-            pass
-        
         #@ click move confirmation button
-        driver.find_elements(By.XPATH, "//button[text()='Yes, move them']")[0].click()
+        clickElementWait(driver, "XPATH", "//button[text()='Yes, move them']", 3)
         time.sleep(.5)
         
         return
@@ -391,7 +371,7 @@ class RunMaster:
                 percent_correct_berries = rand.randint(10,20)
 
                 #@ navigates to users screen
-                driver.find_element(By.LINK_TEXT, "Users").click()
+                driver.get("https://gpx.plus/users/")
                 print(driver.current_url)
                 time.sleep(1)
 
@@ -401,7 +381,7 @@ class RunMaster:
 
                 #@ set number of users to *1000*
                 if(driver.find_element(By.XPATH,"//*[@id='usersCount']/span").text != "View 1000 users (who)"):
-                    driver.find_element(By.ID, "usersCount").click()
+                    clickElementWait(driver, "ID", "usersCount", 3)
                     time.sleep(.5)
                     actions = ActionChains(driver)
                     actions.send_keys(Keys.DOWN + Keys.DOWN + Keys.DOWN)
@@ -412,7 +392,7 @@ class RunMaster:
 
                 #@ set users to pick from to *random(because all is being a bitch)*
                 if(driver.find_element(By.XPATH, "//*[@id='usersList']/span") != "ordered randomly" and not(passorb)):
-                    driver.find_element(By.XPATH, "//*[@id='usersList']").click()
+                    clickElementWait(driver, "XPATH", "//*[@id='usersList']", 3)
                     time.sleep(.5)
                     ActionChains(driver).send_keys(Keys.DOWN + Keys.DOWN + Keys.DOWN + Keys.DOWN + Keys.DOWN + Keys.DOWN + Keys.DOWN + Keys.DOWN + Keys.DOWN + Keys.DOWN + Keys.DOWN + Keys.DOWN).perform()
                     time.sleep(.5)
@@ -421,7 +401,7 @@ class RunMaster:
                     
                 #@ set users to pick from to *users that have interacted with me*
                 elif(passorb):
-                    driver.find_element(By.XPATH, "//*[@id='usersList']").click()
+                    clickElementWait(driver, "XPATH", "//*[@id='usersList']", 3)
                     time.sleep(.5)
                     ActionChains(driver).send_keys(Keys.DOWN + Keys.DOWN + Keys.DOWN + Keys.DOWN + Keys.DOWN + Keys.DOWN + Keys.DOWN + Keys.DOWN + Keys.DOWN + Keys.DOWN + Keys.DOWN + Keys.DOWN + Keys.UP + Keys.UP + Keys.UP + Keys.UP + Keys.UP + Keys.UP + Keys.UP + Keys.UP).perform()
                     time.sleep(.5)
@@ -429,7 +409,7 @@ class RunMaster:
                     time.sleep(2)
                     
                 #@ open berry feeder
-                driver.find_element(By.XPATH, "//*[@id='usersOpen']/input[1]").click()
+                clickElementWait(driver, "XPATH", "//*[@id='usersOpen']/input[1]", 3)
 
 
 
