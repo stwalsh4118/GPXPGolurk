@@ -138,11 +138,12 @@ def createWindow(accounts):
             sg.Multiline(
                    autoscroll=False, disabled=True, size=(40, 30), key=(account["user"] + " multiline")
                ),
-            sg.Column([[sg.Text('Select Egg to Fill Party With')],
-            [sg.Input(do_not_clear=True, size=(30,1),enable_events=True, key=(account["user"] + " searchinput"))],
-            [sg.Listbox(loadEggs("eggs.json"), size=(30,20), select_mode = "LISTBOX_SELECT_MODE_SINGLE", enable_events=True, key=(account["user"] + " eggs"))],
-            [sg.Text("Currently Selected Egg", font = ("Helvetica", 11, "underline"))],
-            [sg.Text("", size=(30,1), key = (account["user"] + " selectedegg"))]
+            sg.Column([
+                [sg.Text('Select Egg to Fill Party With')],
+                [sg.Input(do_not_clear=True, size=(30,1),enable_events=True, key=(account["user"] + " searchinput"))],
+                [sg.Listbox(loadEggs("eggs.json"), size=(30,20), select_mode = "LISTBOX_SELECT_MODE_SINGLE", enable_events=True, key=(account["user"] + " eggs"))],
+                [sg.Text("Currently Selected Egg", font = ("Helvetica", 11, "underline"))],
+                [sg.Text("", size=(30,1), key = (account["user"] + " selectedegg"))]
             ], vertical_alignment = 't')
        ],
        tab_building += [

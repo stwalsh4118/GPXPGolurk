@@ -21,6 +21,12 @@ import re
 
 #TODO: EVENTUALLY HAVE FULL AUTO OPTION SO IT WILL JUST RUN AND CLICK AND HATCH EGGS FOR YOU
 
+#IDEA: COULD TRACK TIME IT TAKES FOR SERVER TO RESPOND OVERTIME AND ADD THAT TIME TO SPECIFIC 
+#IDEA: SLEEPS SO WE NEVER DO STUFF BEFORE THE PAGE IS READY ON THOSE SPECIFIC SLEEPS
+
+#IDEA: SAFARI ZONE MODE
+#IDEA: LAB MODE
+
 class RunMaster:
       
     def __init__(self):
@@ -30,7 +36,7 @@ class RunMaster:
         self._running = False
 
     def fillEggs(self, driver, username, pokemon_name):
-        
+        """
         #   [summary]
         #   
         #    Runs routine that fills your party with the specified pokemons eggs
@@ -46,16 +52,17 @@ class RunMaster:
         #@   driver (Chrome webdriver): the driver of the Chrome application you are running
         #@   username (string): the username for which account/driver you are running
         #@   pokemon_name (string): the pokemon name for which egg you are looking for to fill up your party
-        
+        """
                 
         #TODO: PROBABLY SHOULD HAVE A TIMEOUT IF LOOKING FOR EGGS FOR TOO LONG
         #TODO: IF TIMED OUT, CHECK IF YOU HAVE EGGS READY TO DONATE TO SHELTER IN YOUR DAYCARE (search "TODO: fillEggs #1")
         
+        #IDEA: RANDOM EGG MODE
+        
         if(pokemon_name == None or pokemon_name == ""): return 
         
         #@ Navigate to shelter screen
-        driver.find_element(By.CSS_SELECTOR, "a[data-page='shelter']").click()
-        print(driver.current_url)
+        driver.get("https://gpx.plus/shelter")
         time.sleep(1)
         
         #@ Get number of members in your party
@@ -135,6 +142,7 @@ class RunMaster:
     
     def hatchEggs(self, driver, username, box_number):
         
+        """
         #   [summary]
         #   
         #    Hatch all eggs in your party that are mature
@@ -143,15 +151,17 @@ class RunMaster:
         #@   driver (Chrome webdriver): the driver of the Chrome application you are running
         #@   username (string): username for account of the driver
         #@   box_number (int): box number to start search for box to put pokemon into to use in movePokemon function after hatching
+        """
         
         #TODO: NEED TO HAVE A SYSTEM THAT KNOWS WHICH BOX TO PUT YOUR SHINY INTO (search "TODO: hatchEggs #2")
         #TODO: OPTIONS ARE:
         #TODO:           DO A CHECK IN THE PC TO SEE WHICH BOXES ARE PROTECTED 
         #TODO:                  (WE CAN ALSO CHECK IF PROTECTED IS FULL AND THEN MAKE ANOTHER PROTECTED BOX TO FILL UP, AD INFINITUM)
-        #TODO:           MANUALY PICK (NOT GOOD FOR AUTOMATIC MODE)
+        #TODO:           MANUALLY PICK (NOT GOOD FOR AUTOMATIC MODE)
         #TODO:           SELECT THE FIRST BOX WITH ROOM(NOT GOOD BECAUSE REQUIRES MANUAL CHECKING FOR SHINIES WHICH THIS IS SUPPOSED TO REMEDY)
         #TODO:           SAVE FIRST X AMOUNT OF BOXES TO BE RESERVED FOR SPECIAL POKEMON IMPLICITLY (THIS ONES OK, BUT PROBLEM IF FILLED)
 
+        #IDEA: PRINT SAVE DATA WHEN EGGS ARE HATCHED
         
         #@ go to main page
         driver.get("https://gpx.plus/main")       
@@ -177,9 +187,14 @@ class RunMaster:
         #@ wait for hatch confirmation button to appear
         while(len(driver.find_elements(By.XPATH, "//button[text()='Yes, hatch them']")) <= 0):
             pass
+        time.sleep(.5)
         
         #@ click the hatch confirmation button
-        driver.find_elements(By.XPATH, "//button[text()='Yes, hatch them']")[0].click()
+        try:
+            driver.find_elements(By.XPATH, "//button[text()='Yes, hatch them']")[0].click()
+        except Exception:
+            print(Exception)
+            return
         
         #@ wait for post-hatch alert that tells you what you hatched
         while(len(driver.find_elements(By.XPATH, "//div[contains(text(), 'Your egg hatched into')]")) <= 0):
@@ -202,7 +217,18 @@ class RunMaster:
             index += 1
             
         #@ close post-hatch alert
-        driver.find_elements(By.CSS_SELECTOR, "span[class='ui-icon ui-icon-closethick']")[0].click()
+        t_end = time.time() + 2
+        timeout = False
+        while(not(timeout)):
+            try:
+                driver.find_elements(By.CSS_SELECTOR, "span[class='ui-icon ui-icon-closethick']")[0].click()
+                timeout = True
+            except Exception:
+                print(Exception)
+                timeout = False
+            if(time.time() > t_end):
+                timeout = True
+            
         
         #TODO: hatchEggs #2
         #@ if there is a shiny that was hatched move it into box specified
@@ -227,7 +253,7 @@ class RunMaster:
             time.sleep(.5)
         
         
-        
+        time.sleep(.5)
         #@ move pokemon into box
         self.movePokemon(driver, box_number)
 
@@ -236,7 +262,8 @@ class RunMaster:
     
 
     def movePokemon(self, driver, box_number):
-            
+        
+        """    
         #   [summary]
         #   
         #    Used to move pokemon from your party into a PC starting at a certain box number so the ones before are not changed
@@ -244,19 +271,25 @@ class RunMaster:
         #   Args:
         #@   driver (Chrome webdriver): the driver of the Chrome application you are running
         #@   box_number (int): box number to start search for box to put pokemon into
+        """
         
         #TODO: MAKE IT SO THAT IT CHECKS AGAINST NUMBER IN PARTY NOT JUST MAX PARTY AMOUNT (search for "TODO: movePokemon #1")
+        
+        #IDEA: PRINT SAVE DATA WHEN POKEMON ARE MOVED
         
         #@ wait for move all pokemon button to appear, return if it doesn't show up or is disabled
         t_end = time.time() + 1
         while(len(driver.find_elements(By.CSS_SELECTOR, "span[class='pkAllMove']")) <= 0):
             if(time.time() > t_end):
                 return
-            pass
         time.sleep(.5)
             
         #@ click move all pokemon button
-        driver.find_elements(By.CSS_SELECTOR, "span[class='pkAllMove']")[0].click()
+        try:
+            driver.find_elements(By.CSS_SELECTOR, "span[class='pkAllMove']")[0].click()
+        except Exception:
+            print(Exception)
+            return
         time.sleep(.5)
         
         
@@ -316,6 +349,7 @@ class RunMaster:
 
     def clickRun(self, driver, username, number, storage, numrunstat, numruns, passorb, fullrandom, pokemon_name):
         
+        """
         #    [summary]
         #
         #    Runs routine that automates massclicks
@@ -333,6 +367,7 @@ class RunMaster:
         #@    storage (list): list object used to store data from click run
         #@    numruns (int x > 0): number of click runs to complete in a row
         #@    passorb (bool): if True selects "Iteract with players that have interacted with you that you haven't" to farm pass orbs
+        """
         
         #IDEA: implement time based clicking, so that the different accounts don't look so similar
         #TODO: MAKE IT SO PROPER BERRIES ARE STILL COUNTED FOR RANDOM MODE (search TODO: clickRun #1)
@@ -390,6 +425,16 @@ class RunMaster:
             proper_berry_amount = 0
             total_berry_amount = 0
             click = False
+            
+            base_minute = 60
+            base_pokemon_per_minute = 300
+            
+            #TODO: HAVE INPUT FOR THIS
+            pokemon_per_minute = 200
+            
+            #@ time for mass click run to run
+            run_end = time.time() + base_minute * base_pokemon_per_minute / pokemon_per_minute
+            
             
             #@ while loop that runs the clicking process
             while(i >= 0 and self._running):
@@ -494,6 +539,8 @@ class RunMaster:
             print("Proper Berries: ", str(proper_berry_amount))
             
             #@ store stats in mutable object that thread can interact with in a global scale
+            if(total_berry_amount == 0):
+                total_berry_amount = 1
             storage[username].append([
                 "    Total Berries: " + str(total_berry_amount),
                 "    Theoretical Percent Correct Berries: " + str(percent_correct_berries),
@@ -506,5 +553,10 @@ class RunMaster:
             #@ hatch any eggs you can then fill your party back with eggs after every mass click run
             self.hatchEggs(driver, username, 3)
             self.fillEggs(driver, username, pokemon_name)
+            
+            #@ if mass click run is faster than X pokemon per second then wait, if it is slower, then do nothing (we can't go faster than a certain amount)
+            print(f"Time left in run: {run_end - time.time()}")
+            while(time.time() < run_end):
+                pass
             
         return
