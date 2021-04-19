@@ -73,9 +73,9 @@ class RunMaster:
         egg_list = loadEggs("eggs.json")
         image_search = ""
 
-        #@ check if selected pokemon is within our dataset
-        if(not(pokemon_name in egg_list)): return print("pokemon not in data")
-        image_search = egg_list[pokemon_name]["image"]
+        # #@ check if selected pokemon is within our dataset
+        # if(not(pokemon_name in egg_list)): return print("pokemon not in data")
+        # image_search = egg_list[pokemon_name]["image"]
         print(num_party_members < 6)
         
         
@@ -91,43 +91,13 @@ class RunMaster:
             #     #@ grab egg from shelter
             #     driver.find_element(By.CSS_SELECTOR, f"img[src={image_search}]").click()
             
-            #@ check if egg is in the current shelter display via the egg name 
-            #@ if you have already discovered/hatched the egg and revealed the egg name in the shelter
-            #@ will need to implement the check if you have the egg data in your pokedex before using this
-            #@ but for now we assume you already have egg data for the egg selected
-            
-            egg_found = False
-            if(len(driver.find_elements(By.CSS_SELECTOR, f"img[data-tooltip='{pokemon_name} Egg']")) > 0):
-                print("Egg found")
-                egg_found = True
-                
-                #@ try to click egg (theres several scenarios where you can't click the egg even if its there like if another egg is on top)
-                #@ so we just skip and reload the shelter
-                try:
-                    driver.find_elements(By.CSS_SELECTOR, f"img[data-tooltip='{pokemon_name} Egg']")[0].click()
-                    time.sleep(.5)
-                except:
-                    egg_found = False
-                
-                #@ wait for egg claim button to appear 
-                #@ (there are cases where the button doesn't appear even when egg IS clicked so we just skip if that happens)
-                t_end = time.time() + 1
-                timeout = False
-                while(len(driver.find_elements(By.XPATH, "//button[text()='Yes, claim it']")) <= 0 and egg_found and self._running and not(timeout)):
-                    if(len(driver.find_elements(By.CSS_SELECTOR, f"img[data-tooltip='{pokemon_name} Egg']")) <= 0):
-                        egg_found = False
-                    if(len(driver.find_elements(By.CSS_SELECTOR, "aside[class='tooltip ']")) > 0):
-                        egg_found = False
-                    if((time.time() < t_end)):
-                        timeout = True
-                        egg_found = False
-                time.sleep(.5)
-                
-                #@ click confirmation button
-                if(egg_found):
-                    driver.find_elements(By.XPATH, "//button[text()='Yes, claim it']")[0].click()
-                    time.sleep(.5)
-                print("confirmation clicked")
+            #TODO: RANDOM EGG MODE AS WELL NOT JUST MYSTERY
+            #@ if mystery egg mode is enabled, only grab eggs that we haven't gotten before (gonna use this so I can harvest egg images)
+            mystery_egg_mode = False
+            if(mystery_egg_mode):
+                self.gatherEgg(driver, "Mystery")
+            else:
+                self.gatherEgg(driver, pokemon_name)
             
             #@ reload shelter
             if(len(driver.find_elements(By.CSS_SELECTOR, "span[class='shelterLoad']")) > 0):
@@ -136,6 +106,48 @@ class RunMaster:
             #@ quit if end action button is pressed
             if(not(self._running)):
                 break
+        return
+    
+    def gatherEgg(self, driver, pokemon_name):
+        
+        #@ check if egg is in the current shelter display via the egg name 
+        #@ if you have already discovered/hatched the egg and revealed the egg name in the shelter
+        #@ will need to implement the check if you have the egg data in your pokedex before using this
+        #@ but for now we assume you already have egg data for the egg selected
+        
+        egg_found = False
+        if(len(driver.find_elements(By.CSS_SELECTOR, f"img[data-tooltip='{pokemon_name} Egg']")) > 0):
+            print("Egg found")
+            egg_found = True
+            
+            #@ try to click egg (theres several scenarios where you can't click the egg even if its there like if another egg is on top)
+            #@ so we just skip and reload the shelter
+            try:
+                driver.find_elements(By.CSS_SELECTOR, f"img[data-tooltip='{pokemon_name} Egg']")[0].click()
+                time.sleep(.5)
+            except:
+                egg_found = False
+            
+            #@ wait for egg claim button to appear 
+            #@ (there are cases where the button doesn't appear even when egg IS clicked so we just skip if that happens)
+            t_end = time.time() + 1
+            timeout = False
+            while(len(driver.find_elements(By.XPATH, "//button[text()='Yes, claim it']")) <= 0 and egg_found and self._running and not(timeout)):
+                if(len(driver.find_elements(By.CSS_SELECTOR, f"img[data-tooltip='{pokemon_name} Egg']")) <= 0):
+                    egg_found = False
+                if(len(driver.find_elements(By.CSS_SELECTOR, "aside[class='tooltip ']")) > 0):
+                    egg_found = False
+                if((time.time() < t_end)):
+                    timeout = True
+                    egg_found = False
+            time.sleep(.5)
+            
+            #@ click confirmation button
+            if(egg_found):
+                driver.find_elements(By.XPATH, "//button[text()='Yes, claim it']")[0].click()
+                time.sleep(.5)
+            print("confirmation clicked")
+            
         return
     
     
@@ -430,7 +442,7 @@ class RunMaster:
             base_pokemon_per_minute = 300
             
             #TODO: HAVE INPUT FOR THIS
-            pokemon_per_minute = 200
+            pokemon_per_minute = 300
             
             #@ time for mass click run to run
             run_end = time.time() + base_minute * base_pokemon_per_minute / pokemon_per_minute
