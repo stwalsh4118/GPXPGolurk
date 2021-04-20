@@ -502,6 +502,7 @@ class RunMaster:
                                 actions.send_keys("1")
                                 actions.perform()
                                 proper_berry_amount += 1 
+                                
                 #TODO: clickRun #1
                 #@ pick berry completely randomly (should have a 1:5 proper berry input to interaction ratio)
                 else:
